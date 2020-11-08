@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Code">
+      <UniqueIdentifier>{6816636e-1636-4125-841f-3838ff4b71cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Code\NeuralNetCode">
+      <UniqueIdentifier>{8404b0ac-0453-42a0-a301-8e2e36aac097}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Code\NeuralNetCode\Layers">
+      <UniqueIdentifier>{a2202ab5-732e-456e-8977-11dbdb4d22ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Code\UserCode">
+      <UniqueIdentifier>{b9b15c7c-81ff-41c8-a798-72b60a0c707c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Code\NeuralNetCode\NeuralNet.cpp">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\OpenCLFunctions.cpp">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetBaseFunc.cpp">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetUtility.cpp">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetConvFunc.cpp">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetFCFunc.cpp">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetOutputFunc.cpp">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\UserCode\SDLFunctions.cpp">
+      <Filter>Code\UserCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\UserCode\Main.cpp">
+      <Filter>Code\UserCode</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Code\NeuralNetCode\NeuralNet.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\OpenCLFunctions.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\NetBaseFunc.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\NetComponents.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\NetTypes.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\NetUtility.h">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\Layers\NetConvFunc.h">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\Layers\NetFCFunc.h">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\Layers\NetOutputFunc.h">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\UserCode\SDLFunctions.h">
+      <Filter>Code\UserCode</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

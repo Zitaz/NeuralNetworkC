@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RemoteDebuggerCommand>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug\ModularNeuralNetworks</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>FK021397</RemoteDebuggerServerName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <RemoteDebuggerCommand>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug\ModularNeuralNetworks</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>FK021397</RemoteDebuggerServerName>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <RemoteDebuggerCommand>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug\ModularNeuralNetworks</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>FK021397</RemoteDebuggerServerName>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <RemoteDebuggerCommand>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug\ModularNeuralNetworks</RemoteDebuggerCommand>
+    <RemoteDebuggerWorkingDirectory>C:\Users\Administratör\source\repos\ModularNeuralNetworks\x64\Debug</RemoteDebuggerWorkingDirectory>
+    <RemoteDebuggerServerName>FK021397</RemoteDebuggerServerName>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>

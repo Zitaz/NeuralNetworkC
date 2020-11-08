@@ -1,0 +1,8 @@
+ModularNeuralNetwork/Release/
+ModularNeuralNetwork/Debug/
+Serialized/
+Release/
+Debug/
+.vs/
+*.hgignore
+.hg/
