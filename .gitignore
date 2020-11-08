@@ -1,8 +1,7 @@
 ModularNeuralNetwork/Release/
 ModularNeuralNetwork/Debug/
-Serialized/
-Release/
-Debug/
+ModularNeuralNetwork/x64/Release/
+ModularNeuralNetwork/x64/Debug/
 .vs/
 *.hgignore
 .hg/
