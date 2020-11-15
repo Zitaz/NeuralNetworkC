@@ -12,7 +12,7 @@ namespace Net
 {
 	namespace FCFunc
 	{
-		void FeedForward(LayerData& current_layer, LayerData& next_layer);
-		void Backprop(LayerData& current_layer, LayerData& next_layer, const float eta, const float momentum);
+		void FeedForward(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data);
+		void Backprop(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum);
 	}
 }

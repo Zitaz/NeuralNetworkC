@@ -2,9 +2,10 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 
+extern "C" {
 #include "NetTypes.h"
+}
 
-#include <CL/cl.hpp>
 #include <CL/cl.h>
 
 namespace Net 
@@ -78,8 +79,8 @@ namespace Net
 
 	typedef struct LayerData
 	{
-		Types::NetType _type;
-		Types::ActivationFunction _function;
+		Net_NetType _type;
+		Net_ActivationFunction _function;
 
 		bool _use_open_CL;
 

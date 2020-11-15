@@ -1,15 +1,13 @@
 #include "NetConvFunc.h"
-#include "../OpenCLFunctions.h"
 #include "../NetUtility.h" 
 
 #include <assert.h>
-
 
 namespace Net
 {
 	namespace ConvFunc
 	{
-		void FeedForward(LayerData& current_layer, LayerData& next_layer)
+		void FeedForward(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data)
 		{
 			if (!current_layer._use_open_CL)
 			{
@@ -17,11 +15,11 @@ namespace Net
 			}
 			else
 			{
-				FeedForwardCL(current_layer, next_layer);
+				FeedForwardCL(current_layer, next_layer, cl_data);
 			}
 		}
 
-		void Backprop(LayerData& current_layer, LayerData& next_layer, const float eta, const float momentum)
+		void Backprop(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum)
 		{
 			if (!current_layer._use_open_CL)
 			{
@@ -30,14 +28,14 @@ namespace Net
 			}
 			else
 			{
-				CalcGradientCL(current_layer, next_layer);
-				UpdateWeightsCL(current_layer, next_layer, eta, momentum);
+				CalcGradientCL(current_layer, next_layer, cl_data);
+				UpdateWeightsCL(current_layer, next_layer, cl_data, eta, momentum);
 			}
 		}
 
 		void CalcGradient(LayerData& current_layer, LayerData& next_layer)
 		{
-			const Types::ActivationFunction function = current_layer._function;
+			const Net_ActivationFunction function = current_layer._function;
 
 			const unsigned length = current_layer._conv_layer_data->_length;
 			const unsigned length_pow = length * length;
@@ -253,7 +251,7 @@ namespace Net
 			Net::BaseFunc::ActivateLayer(next_layer);//TODO: Maybe can do this in the loop?
 		}
 
-		void FeedForwardCL(LayerData & current_layer, LayerData & next_layer)
+		void FeedForwardCL(LayerData & current_layer, LayerData & next_layer, Net_CLData* cl_data)
 		{
 			const unsigned next_length = (current_layer._conv_layer_data->_length - current_layer._conv_layer_data->_filter_length) / current_layer._conv_layer_data->_stride + 1;
 
@@ -262,9 +260,9 @@ namespace Net
 
 			//auto start = std::chrono::high_resolution_clock::now();
 
-			//Get opencl kernel and queue 
-			cl_kernel& kernel = OpenCL::Kernels::instace.feedforward_conv_kernel[next_layer._function];
-			cl_command_queue& queue = OpenCL::Data::instace.queue;
+			//Get opencl kernel and _queue 
+			cl_kernel& kernel = cl_data->_kernals._feedforward_conv_kernel[next_layer._function];
+			cl_command_queue& _queue = cl_data->_queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -285,21 +283,21 @@ namespace Net
 			assert(error == 0);
 			error = clSetKernelArg(kernel, 5, sizeof(cl_int), &current_layer._conv_layer_data->_depth);
 			assert(error == 0);
-			//error = queue.finish();
+			//error = _queue.finish();
 			//
 			//stop = std::chrono::high_resolution_clock::now();
 			//duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = clFinish(queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			size_t global_range[] = { next_length, next_length, current_layer._conv_layer_data->_num_filters };
-			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
+			error = clEnqueueNDRangeKernel(_queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
 			assert(error == 0);
 
-			error = clFinish(OpenCL::Data::instace.queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();
@@ -308,7 +306,7 @@ namespace Net
 			//clReleaseMemObject(temp_buffer);
 		}
 
-		void UpdateWeightsCL(LayerData & current_layer, LayerData & next_layer, const float eta, const float momentum)
+		void UpdateWeightsCL(LayerData & current_layer, LayerData & next_layer, Net_CLData* cl_data, const float eta, const float momentum)
 		{
 			const unsigned next_length = (current_layer._conv_layer_data->_length - current_layer._conv_layer_data->_filter_length) / current_layer._conv_layer_data->_stride + 1;
 
@@ -317,9 +315,9 @@ namespace Net
 
 			//auto start = std::chrono::high_resolution_clock::now();
 
-			//Get opencl kernel and queue 
-			cl_kernel& kernel = OpenCL::Kernels::instace.update_weights_conv_kernel;
-			cl_command_queue& queue = OpenCL::Data::instace.queue;
+			//Get opencl kernel and _queue 
+			cl_kernel& kernel = cl_data->_kernals._update_weights_conv_kernel;
+			cl_command_queue& _queue = cl_data->_queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -346,21 +344,21 @@ namespace Net
 			assert(error == 0);
 			error = clSetKernelArg(kernel, 8, sizeof(cl_float), &momentum);
 			assert(error == 0);
-			//error = queue.finish();
+			//error = _queue.finish();
 			//
 			//stop = std::chrono::high_resolution_clock::now();
 			//duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = clFinish(queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			size_t global_range[] = { current_layer._conv_layer_data->_filter_length * current_layer._conv_layer_data->_filter_length, current_layer._conv_layer_data->_depth, current_layer._conv_layer_data->_num_filters };
-			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
+			error = clEnqueueNDRangeKernel(_queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
 			assert(error == 0);
 
-			error = clFinish(queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();
@@ -369,16 +367,16 @@ namespace Net
 			//clReleaseMemObject(temp_buffer);
 		}
 
-		void CalcGradientCL(LayerData & current_layer, LayerData & next_layer)
+		void CalcGradientCL(LayerData & current_layer, LayerData & next_layer, Net_CLData* cl_data)
 		{
 			//OpenCL error
 			cl_int error = 0;
 
 			//auto start = std::chrono::high_resolution_clock::now();
 
-			//Get opencl kernel and queue 
-			cl_kernel& kernel = OpenCL::Kernels::instace.calc_gradient_conv_kernel[current_layer._function];
-			cl_command_queue& queue = OpenCL::Data::instace.queue;
+			//Get opencl kernel and _queue 
+			cl_kernel& kernel = cl_data->_kernals._calc_gradient_conv_kernel[current_layer._function];
+			cl_command_queue& _queue = cl_data->_queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -401,21 +399,21 @@ namespace Net
 			assert(error == 0);
 			error = clSetKernelArg(kernel, 6, sizeof(cl_int), &current_layer._conv_layer_data->_num_filters);
 			assert(error == 0);
-			//error = queue.finish();
+			//error = _queue.finish();
 			//
 			//stop = std::chrono::high_resolution_clock::now();
 			//duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = clFinish(queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			size_t global_range[] = { current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_depth };
-			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
+			error = clEnqueueNDRangeKernel(_queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
 			assert(error == 0);
 
-			error = clFinish(queue);
+			error = clFinish(_queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();

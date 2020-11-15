@@ -5,42 +5,30 @@
 #include "NetTypes.h"
 
 #include <CL/cl.h>
-#include <CL/cl.hpp>
 
-namespace OpenCL
+//Index = activation function
+typedef struct Net_CLKernels
 {
-	typedef struct Data
-	{
-		cl_platform_id platform;
-		cl_device_id device;
-		cl_context context;
-		cl_program program;
-		cl_command_queue queue;
+	cl_kernel _feedforward_fc_kernel[NET_ACTIVATION_FUNC_NUM_FUNCTIONS];
+	cl_kernel _backprop_fc_kernel[NET_ACTIVATION_FUNC_NUM_FUNCTIONS];
+	cl_kernel _feedforward_conv_kernel[NET_ACTIVATION_FUNC_NUM_FUNCTIONS];
+	cl_kernel _calc_gradient_conv_kernel[NET_ACTIVATION_FUNC_NUM_FUNCTIONS];
+	cl_kernel _update_weights_conv_kernel;
+	cl_kernel _backprop_output_kernel[NET_ACTIVATION_FUNC_NUM_FUNCTIONS];
 
-		static Data instace;
-	} Data;
+} Net_CLKernels;
 
-	//Index = activation function
-	typedef struct Kernels 
-	{
-		cl_kernel feedforward_fc_kernel[Net::Types::NUM_FUNCTIONS];
-		cl_kernel backprop_fc_kernel[Net::Types::NUM_FUNCTIONS];
-		cl_kernel feedforward_conv_kernel[Net::Types::NUM_FUNCTIONS];
-		cl_kernel calc_gradient_conv_kernel[Net::Types::NUM_FUNCTIONS];
-		cl_kernel update_weights_conv_kernel;
-		cl_kernel backprop_output_kernel[Net::Types::NUM_FUNCTIONS];
+typedef struct Net_CLData
+{
+	cl_platform_id _platform;
+	cl_device_id _device;
+	cl_context _context;
+	cl_program _program;
+	cl_command_queue _queue;
 
-		static Kernels instace;
-	} Kernels;
+	Net_CLKernels _kernals;
 
-	void InitializeData();
+} Net_CLData;
 
-	void InitializeKernels();
-
-	void DeinitializeData();
-
-	//Pointless only one row
-	cl::Kernel CreateKernel(const char* function_name, cl::Program program, cl_int& err);
-
-	void CreateProgram(const char* file_path);
-}
+void Net_CLInitializeData(Net_CLData* data);
+void Net_CLDeinitializeData(Net_CLData* data);

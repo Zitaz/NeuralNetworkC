@@ -1,5 +1,7 @@
 #include "NetBaseFunc.h"
+extern "C" {
 #include "OpenCLFunctions.h"
+}
 
 #include <assert.h>
 
@@ -14,34 +16,35 @@ namespace Net
 			memset(layer._neurons_data->_values, 0x00, layer._neurons_data->_num_neurons);
 		}
 
-		void SetValues(LayerData& layer, Types::LayerValues values)
+		void SetValues(LayerData& layer, Net_CLData* cl_data, Net_ArrayF values)
 		{
 			if (!layer._use_open_CL)
 			{
 				assert(layer._neurons_data != nullptr, "Neurons has not been init");
-				assert(values.size() == layer._neurons_data->_num_neurons);// , "Size of values, don't match the size of _neurons, SetValus()");
+				assert(values._size == layer._neurons_data->_num_neurons);// , "Size of values, don't match the _size of _neurons, SetValus()");
 
-				memcpy(layer._neurons_data->_values, values.data(), sizeof(float) * layer._neurons_data->_num_neurons);
+				memcpy(layer._neurons_data->_values, values._data, sizeof(float) * layer._neurons_data->_num_neurons);
 			}
 			else
 			{
 				assert(layer._neurons_CL_data != nullptr, "Neurons has not been init");
-				assert(values.size() == layer._neurons_CL_data->_num_neurons);
+				assert(values._size == layer._neurons_CL_data->_num_neurons);
 
-				clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, &values[0], NULL, NULL, NULL);
-				clFinish(OpenCL::Data::instace.queue);
+				clEnqueueWriteBuffer(cl_data->_queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, values._data, NULL, NULL, NULL);
+				clFinish(cl_data->_queue);
 			}
 		}
 
-		Types::LayerValues GetValues(LayerData& layer)
+		Net_ArrayF GetValues(LayerData& layer, Net_CLData* cl_data)
 		{
 			if (!layer._use_open_CL)
 			{
 				assert(layer._neurons_data != nullptr, "Neurons has not been init");
 
-				Types::LayerValues values(layer._neurons_data->_num_neurons);
+				Net_ArrayF values;
 
-				memcpy(values.data(), layer._neurons_data->_values, sizeof(float) * layer._neurons_data->_num_neurons);
+				Net_CreateArrayF(&values, layer._neurons_data->_num_neurons, 0);
+				Net_MemCpyArrayF(&values, layer._neurons_data->_values, 0, layer._neurons_data->_num_neurons);
 
 				return values;
 			}
@@ -49,11 +52,13 @@ namespace Net
 			{
 				assert(layer._neurons_CL_data != nullptr, "Neurons has not been init");
 
-				Types::LayerValues values(layer._neurons_CL_data->_num_neurons);
+				Net_ArrayF values;
 
-				clFinish(OpenCL::Data::instace.queue);//Make sure nothing is writing to buffer
-				clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, values.data(), NULL, NULL, NULL);
-				clFinish(OpenCL::Data::instace.queue);
+				Net_CreateArrayF(&values, layer._neurons_CL_data->_num_neurons, layer._neurons_CL_data->_num_neurons);
+
+				clFinish(cl_data->_queue);//Make sure nothing is writing to buffer
+				clEnqueueReadBuffer(cl_data->_queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, values._data, NULL, NULL, NULL);
+				clFinish(cl_data->_queue);
 
 				return values;
 			}
@@ -66,11 +71,11 @@ namespace Net
 
 			switch (layer._function)
 			{
-			case Types::ActivationFunction::LEAKY_RELU:
+			case Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU:
 				for (size_t i = 0; i < layer._neurons_data->_num_neurons; i++)
 					values[i] = Net::Utility::Relu(values[i]);
 				break;
-			case Types::ActivationFunction::SIGMOID:
+			case Net_ActivationFunction::NET_ACTIVATION_FUNC_SIGMOID:
 				for (size_t i = 0; i < layer._neurons_data->_num_neurons; i++)
 					values[i] = Net::Utility::Sigmoid(values[i]);
 				break;

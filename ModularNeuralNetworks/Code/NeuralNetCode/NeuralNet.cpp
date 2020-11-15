@@ -3,8 +3,11 @@
 #include "Layers/NetOutputFunc.h"
 #include "Layers/NetFCFunc.h"
 #include "NetBaseFunc.h"
-#include "OpenCLFunctions.h"
 #include "NetUtility.h"
+
+extern "C" {
+#include "OpenCLFunctions.h"
+}
 
 #include "flatbuffers.h"
 #include "Generated/NetData_generated.h"
@@ -17,12 +20,6 @@
 
 namespace Net
 {
-	NeuralNet::NeuralNet(unsigned num_layers)
-	{
-		_num_layers = num_layers;
-		_num_init_layers = 0;
-		_layers = new LayerData[num_layers];
-	}
 
 	NeuralNet::~NeuralNet()
 	{
@@ -32,34 +29,42 @@ namespace Net
 
 	namespace NetFunc
 	{
-		void AddConvLayer(NeuralNet& net, InitData::NetConvInitData& data, bool use_open_cl)//TODO: Can probably split into more function for reuse
+		void CreateNeuralNet(NeuralNet* net, unsigned num_layers)
 		{
-			assert(net._num_init_layers < net._num_layers, "Can't add more layers");
+			net->_num_layers = num_layers;
+			net->_num_init_layers = 0;
+			net->_layers = new LayerData[num_layers];
+			Net_CLInitializeData(&net->_cl_data);
+		}
+
+		void AddConvLayer(NeuralNet& net, InitData::NetConvInitData& _data, bool use_open_cl)//TODO: Can probably split into more function for reuse
+		{
+			assert(net._num_init_layers < net._num_layers);//"Can't add more layers"
 
 			LayerData& layer = net._layers[net._num_init_layers];
 
-			const unsigned num_neurons = data._length * data._length * data._depth;//TODO: Do we need a bias in conv layer?
-			const unsigned num_neurons_next = ((data._length - data._filter_length) / data._stride + 1) * ((data._length - data._filter_length) / data._stride + 1) * data._num_filters;
-			const unsigned num_weights = data._filter_length * data._filter_length * data._depth * data._num_filters;
+			const unsigned num_neurons = _data._length * _data._length * _data._depth;//TODO: Do we need a bias in conv layer?
+			const unsigned num_neurons_next = ((_data._length - _data._filter_length) / _data._stride + 1) * ((_data._length - _data._filter_length) / _data._stride + 1) * _data._num_filters;
+			const unsigned num_weights = _data._filter_length * _data._filter_length * _data._depth * _data._num_filters;
 
 			layer._conv_layer_data = new ConvLayerData;
 
-			layer._type = Types::NetType::CONVOLUTIONAL;
-			layer._function = data._function;
+			layer._type = Net_NetType::NET_TYPE_CONVOLUTIONAL;
+			layer._function = _data._function;
 			layer._use_open_CL = use_open_cl;
 
-			layer._conv_layer_data->_depth = data._depth;
-			layer._conv_layer_data->_filter_length = data._filter_length;
-			layer._conv_layer_data->_length = data._length;
-			layer._conv_layer_data->_num_filters = data._num_filters;
-			layer._conv_layer_data->_stride = data._stride;
+			layer._conv_layer_data->_depth = _data._depth;
+			layer._conv_layer_data->_filter_length = _data._filter_length;
+			layer._conv_layer_data->_length = _data._length;
+			layer._conv_layer_data->_num_filters = _data._num_filters;
+			layer._conv_layer_data->_stride = _data._stride;
 
 			float* weights = new float[num_weights];
 
 			for (size_t i = 0; i < num_weights; i++)
 			{
 				//Todo: fix so weight init is correct for every activation function. It's currently using the best known for relu
-				weights[i] = Utility::RandomizeOneToZero() * (2.0 / (data._filter_length * data._filter_length * data._depth));
+				weights[i] = Utility::RandomizeOneToZero() * (2.0f / (_data._filter_length * _data._filter_length * _data._depth));
 			}
 
 			if (use_open_cl)
@@ -76,13 +81,13 @@ namespace Net
 				float* delta_weights = new float[num_weights] { 0 };
 				
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
+				layer._weights_CL_data->_buffer_weights = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
+				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
 				assert(error == 0);
 
 				delete[] weights;
@@ -108,19 +113,19 @@ namespace Net
 			net._num_init_layers++;
 		}
 
-		void AddFCLayer(NeuralNet& net, InitData::NetFCInitData& data, bool use_open_cl)
+		void AddFCLayer(NeuralNet& net, InitData::NetFCInitData& _data, bool use_open_cl)
 		{
-			assert(net._num_init_layers < net._num_layers, "Can't add more layers");
+			assert(net._num_init_layers < net._num_layers);//"Can't add more layers"
 
 			LayerData& layer = net._layers[net._num_init_layers];
 
-			const unsigned num_neurons_with_bias = data._num_neurons + 1;
-			const unsigned num_weights = num_neurons_with_bias * data._num_neurons_next;
+			const unsigned num_neurons_with_bias = _data._num_neurons + 1;
+			const unsigned num_weights = num_neurons_with_bias * _data._num_neurons_next;
 
 			layer._fC_layer_data = new FCLayerData;
 
-			layer._type = Types::NetType::FULLY_CONNECTED;
-			layer._function = data._function;
+			layer._type = Net_NetType::NET_TYPE_FULLY_CONNECTED;
+			layer._function = _data._function;
 			layer._use_open_CL = use_open_cl;
 
 			layer._fC_layer_data->_num_neurons_with_bias = num_neurons_with_bias;
@@ -130,7 +135,7 @@ namespace Net
 			for (size_t i = 0; i < num_weights; i++)
 			{
 				//Todo: fix so weight init is correct for every activation function. It's currently using the best known for relu
-				weights[i] = Utility::RandomizeOneToZero() * (2.0 / num_neurons_with_bias);
+				weights[i] = Utility::RandomizeOneToZero() * (2.0f / num_neurons_with_bias);
 			}
 
 			if (use_open_cl)
@@ -138,8 +143,8 @@ namespace Net
 				layer._neurons_CL_data = new NeuronsCLData;
 				layer._weights_CL_data = new WeightsCLData;
 
-				layer._neurons_CL_data->_num_neurons = data._num_neurons;
-				layer._neurons_CL_data->_num_neurons_next = data._num_neurons_next;
+				layer._neurons_CL_data->_num_neurons = _data._num_neurons;
+				layer._neurons_CL_data->_num_neurons_next = _data._num_neurons_next;
 
 				layer._weights_CL_data->_num_weights = num_weights;
 
@@ -149,13 +154,13 @@ namespace Net
 				values[num_neurons_with_bias - 1] = 1.0f;//Set bias
 
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
+				layer._weights_CL_data->_buffer_weights = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
+				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
 				assert(error == 0);
 
 				delete[] weights;
@@ -167,8 +172,8 @@ namespace Net
 				layer._neurons_data = new NeuronsData;
 				layer._weights_data = new WeightsData;
 
-				layer._neurons_data->_num_neurons = data._num_neurons;
-				layer._neurons_data->_num_neurons_next = data._num_neurons_next;
+				layer._neurons_data->_num_neurons = _data._num_neurons;
+				layer._neurons_data->_num_neurons_next = _data._num_neurons_next;
 
 				layer._weights_data->_num_weights = num_weights;
 
@@ -183,14 +188,14 @@ namespace Net
 			net._num_init_layers++;
 		}
 
-		void AddOutputLayer(NeuralNet& net, InitData::NetOutputInitData& data, bool use_open_cl)
+		void AddOutputLayer(NeuralNet& net, InitData::NetOutputInitData& _data, bool use_open_cl)
 		{
-			assert(net._num_init_layers < net._num_layers, "Can't add more layers");
+			assert(net._num_init_layers < net._num_layers);//"Can't add more layers"
 
 			LayerData& layer = net._layers[net._num_init_layers];
 
-			layer._type = Types::NetType::OUTPUT;
-			layer._function = data._function;
+			layer._type = Net_NetType::NET_TYPE_OUTPUT;
+			layer._function = _data._function;
 			layer._use_open_CL = use_open_cl;
 
 			if (use_open_cl)
@@ -198,16 +203,16 @@ namespace Net
 				layer._neurons_CL_data = new NeuronsCLData;
 				layer._output_layer_CL_data = new OutputLayerCLData;
 
-				layer._neurons_CL_data->_num_neurons = data._num_neurons;
+				layer._neurons_CL_data->_num_neurons = _data._num_neurons;
 
-				float* values = new float[data._num_neurons]{ 0 };//TODO: Maybe there is a beter way to initilize valus to zero in the buffers?
+				float* values = new float[_data._num_neurons]{ 0 };//TODO: Maybe there is a beter way to initilize valus to zero in the buffers?
 
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * _data._num_neurons, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * _data._num_neurons, values, &error);
 				assert(error == 0);
-				layer._output_layer_CL_data->_target_value = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._output_layer_CL_data->_target_value = clCreateBuffer(net._cl_data._context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * _data._num_neurons, values, &error);
 				assert(error == 0);
 
 				delete[] values;
@@ -216,16 +221,16 @@ namespace Net
 			{
 				layer._neurons_data = new NeuronsData;
 
-				layer._neurons_data->_num_neurons = data._num_neurons;
+				layer._neurons_data->_num_neurons = _data._num_neurons;
 
-				layer._neurons_data->_values = new float[data._num_neurons]{ 0 };
-				layer._neurons_data->_gradient = new float[data._num_neurons]{ 0 };
+				layer._neurons_data->_values = new float[_data._num_neurons]{ 0 };
+				layer._neurons_data->_gradient = new float[_data._num_neurons]{ 0 };
 			}
 
 			net._num_init_layers++;
 		}
 
-		void BackpropUseCurrentState(NeuralNet& net, const Types::LayerValues& target_output, float eta, float momentum)
+		void BackpropUseCurrentState(NeuralNet& net, const Net_ArrayF& target_output, float eta, float momentum)
 		{
 			for (int i = net._num_layers - 1; i >= 0; i--)
 			{
@@ -234,28 +239,28 @@ namespace Net
 
 				switch (layer._type)
 				{
-				case Types::NetType::FULLY_CONNECTED:
-					FCFunc::Backprop(layer, next_layer, eta, momentum);
+				case Net_NetType::NET_TYPE_FULLY_CONNECTED:
+					FCFunc::Backprop(layer, next_layer, &net._cl_data, eta, momentum);
 					break;
-				case Types::NetType::CONVOLUTIONAL:
-					ConvFunc::Backprop(layer, next_layer, eta, momentum);
+				case Net_NetType::NET_TYPE_CONVOLUTIONAL:
+					ConvFunc::Backprop(layer, next_layer, &net._cl_data, eta, momentum);
 					break;
-				case Types::NetType::OUTPUT:
-					OutputFunc::Backprop(layer, target_output);
+				case Net_NetType::NET_TYPE_OUTPUT:
+					OutputFunc::Backprop(layer, target_output, &net._cl_data);
 					break;
 				}
 			}
 		}
 
-		float CalcLoss(NeuralNet& net, const Types::LayerValues& target_output)
+		float CalcLoss(NeuralNet& net, const Net_ArrayF& target_output)
 		{
-			return OutputFunc::GetLoss(net._layers[net._num_layers - 1], target_output);
+			return OutputFunc::GetLoss(net._layers[net._num_layers - 1], target_output, &net._cl_data);
 		}
 
-		void FeedForward(NeuralNet& net, Types::LayerValues input)
+		void FeedForward(NeuralNet& net, Net_ArrayF input)
 		{
 			//Set values of the input layer
-			BaseFunc::SetValues(net._layers[0], input);
+			BaseFunc::SetValues(net._layers[0], &net._cl_data, input);
 
 			for (unsigned i = 0; i < net._num_layers - 1; i++)
 			{
@@ -264,19 +269,19 @@ namespace Net
 
 				switch (layer._type)
 				{
-				case Types::NetType::FULLY_CONNECTED:
-					FCFunc::FeedForward(layer, next_layer);
+				case Net_NetType::NET_TYPE_FULLY_CONNECTED:
+					FCFunc::FeedForward(layer, next_layer, &net._cl_data);
 					break;
-				case Types::NetType::CONVOLUTIONAL:
-					ConvFunc::FeedForward(layer, next_layer);
+				case Net_NetType::NET_TYPE_CONVOLUTIONAL:
+					ConvFunc::FeedForward(layer, next_layer, &net._cl_data);
 					break;
 				}
 			}
 		}
 
-		Types::LayerValues GetOutputValues(NeuralNet& net)
+		Net_ArrayF GetOutputValues(NeuralNet& net)
 		{
-			return BaseFunc::GetValues(net._layers[net._num_layers - 1]);
+			return BaseFunc::GetValues(net._layers[net._num_layers - 1], &net._cl_data);
 		}
 
 		//TODO: Update
@@ -296,7 +301,7 @@ namespace Net
 		//		//TODO check that stride make sence/ if zero
 		//		BaseLayer& layer = net._layers[i];
 		//
-		//		if (layer._type == BaseLayer::CONVOLUTIONAL)
+		//		if (layer._type == BaseLayer::NET_TYPE_CONVOLUTIONAL)
 		//		{
 		//			assert(layer._filter_length % 2 == 1);
 		//		}
@@ -324,7 +329,7 @@ namespace Net
 		//			layer._gradient[j] = 0.0f;
 		//		}
 		//
-		//		if (layer._type == NetLayer::NetType::FULLY_CONNECTED) {
+		//		if (layer._type == NetLayer::NetType::NET_TYPE_FULLY_CONNECTED) {
 		//			assert(layer._values[layer._num_neurons - 1] == 1.0f);
 		//		}
 		//	}
@@ -359,15 +364,15 @@ namespace Net
 					float* layer_weights = new float[num_weights];
 					float* layer_delta_weights = new float[num_weights];
 		
-					error = clFinish(OpenCL::Data::instace.queue);
+					error = clFinish(net._cl_data._queue);
 					assert(error == 0);
 
-					error = clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_weights, NULL, NULL, NULL);
+					error = clEnqueueReadBuffer(net._cl_data._queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_weights, NULL, NULL, NULL);
 					assert(error == 0);
-					error = clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_delta_weights, NULL, NULL, NULL);
+					error = clEnqueueReadBuffer(net._cl_data._queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_delta_weights, NULL, NULL, NULL);
 					assert(error == 0);
 
-					error = clFinish(OpenCL::Data::instace.queue);
+					error = clFinish(net._cl_data._queue);
 					assert(error == 0);
 
 					weights = builder.CreateVector<float>(layer_weights, num_weights);
@@ -419,102 +424,101 @@ namespace Net
 		
 				if (layer._use_open_CL)
 				{
-					const int size = sizeof(float) * layer._weights_CL_data->_num_weights;
+					const int _size = sizeof(float) * layer._weights_CL_data->_num_weights;
 					
 					cl_int error = 0;
 
-					error = clFinish(OpenCL::Data::instace.queue);
+					error = clFinish(net._cl_data._queue);
 					assert(error == 0);
 
-					error = clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, size, data_layer->_weight()->Data(), NULL, NULL, NULL);
+					error = clEnqueueWriteBuffer(net._cl_data._queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, _size, data_layer->_weight()->Data(), NULL, NULL, NULL);
 					assert(error == 0);
-					error = clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, size, data_layer->_delta_weight()->Data(), NULL, NULL, NULL);
+					error = clEnqueueWriteBuffer(net._cl_data._queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, _size, data_layer->_delta_weight()->Data(), NULL, NULL, NULL);
 					assert(error == 0);
 
-					error = clFinish(OpenCL::Data::instace.queue);
+					error = clFinish(net._cl_data._queue);
 					assert(error == 0);
 				}
 				else
 				{
-					const int size = sizeof(float) * layer._weights_data->_num_weights;
+					const int _size = sizeof(float) * layer._weights_data->_num_weights;
 
-					memcpy(layer._weights_data->_weights, data_layer->_weight()->Data(), size);
-					memcpy(layer._weights_data->_delta_weights, data_layer->_delta_weight()->Data(), size);
+					memcpy(layer._weights_data->_weights, data_layer->_weight()->Data(), _size);
+					memcpy(layer._weights_data->_delta_weights, data_layer->_delta_weight()->Data(), _size);
 				}
 			}
 		
 			return true;
 		}
 		
-		void SaveTrainingData(std::vector<Types::TrainingData> training_data, const char* path)
+		void SaveTrainingData(Net_ArrayTrainingData training_data, const char* path)
 		{
 			flatbuffers::FlatBufferBuilder builder(1024);
 		
-			std::vector<flatbuffers::Offset<Serialization::Data>> data;
+			std::vector<flatbuffers::Offset<Serialization::Data>> _data;
 		
-			for (size_t i = 0; i < training_data.size(); i++)
+			for (size_t i = 0; i < training_data._size; i++)
 			{
-				const Types::TrainingData time_steep = training_data[i];
+				const Net_TrainingData time_steep = training_data._data[i];
 		
-				flatbuffers::Offset<flatbuffers::Vector<float>> input = builder.CreateVector(time_steep._input);
-				flatbuffers::Offset<flatbuffers::Vector<float>> output = builder.CreateVector(time_steep._output);
+				flatbuffers::Offset<flatbuffers::Vector<float>> input = builder.CreateVector(time_steep._input._data, time_steep._input._size);
+				flatbuffers::Offset<flatbuffers::Vector<float>> output = builder.CreateVector(time_steep._output._data, time_steep._output._size);
 		
-				data.push_back(Serialization::CreateData(builder, input, output));
+				_data.push_back(Serialization::CreateData(builder, input, output));
 			}
 		
-			auto serialized_training_data = builder.CreateVector(data);
+			auto serialized_training_data = builder.CreateVector(_data);
 		
 			builder.Finish(Serialization::CreateTrainingData(builder, serialized_training_data));
 			flatbuffers::SaveFile(path, (char*)builder.GetBufferPointer(), builder.GetSize(), true);
 		}
 		
-		Types::TrainingDataVector LoadTrainingData(const char * path)//TODO: Maybe pass training data as ref and return bool true if successful?
+		Net_ArrayTrainingData LoadTrainingData(const char* path)//TODO: Maybe pass training _data as ref and return bool true if successful?
 		{
-			std::vector<Types::TrainingData> training_data;
+			Net_ArrayTrainingData training_data;
+			Net_CreateArrayTD(&training_data, 0, 0);
 		
 			std::ifstream stream(path, std::ifstream::binary);
-			std::string data(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
+			std::string src(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
 		
-			if (!data[0])
+			if (!src[0])
 			{
 				std::cout << "Can't load data, LoadTrainingData()" << std::endl;
 				return training_data;
 			}
 		
-			const Serialization::TrainingData* serialized_training_data = Serialization::GetTrainingData(data.data());
+			const Serialization::TrainingData* serialized_training_data = Serialization::GetTrainingData(src.data());
 		
-
 			for (unsigned i = 0; i < serialized_training_data->_time_steep()->size(); i++)
 			{
-				Types::TrainingData data;
+				Net_TrainingData data;
 				const Serialization::Data* time_steep = serialized_training_data->_time_steep()->Get(i);
 				const int input_size = sizeof(float) * time_steep->_input()->size();
 				const int output_size = sizeof(float) * time_steep->_output()->size();
 		
-				data._input.resize(time_steep->_input()->size());
-				data._output.resize(time_steep->_output()->size());
+				Net_CreateArrayF(&data._input, time_steep->_input()->size(), 0);
+				Net_CreateArrayF(&data._output, time_steep->_output()->size(), 0);
+				Net_MemCpyArrayF(&data._input, (float*)time_steep->_input()->Data(), 0, time_steep->_input()->size());
+				Net_MemCpyArrayF(&data._output, (float*)time_steep->_output()->Data(), 0, time_steep->_input()->size());
 		
-				memcpy(data._input.data(), time_steep->_input()->Data(), input_size);
-				memcpy(data._output.data(), time_steep->_output()->Data(), output_size);
-		
-				training_data.push_back(data);
+				Net_AddArrayTD(&training_data, data);
 			}
 		
 			return training_data;
 		}
 		
-		void TrainNet(NeuralNet& net, const Types::TrainingDataVector& training_data, float eta, float momentum, int display_info_rate)
+		void TrainNet(NeuralNet& net, const Net_ArrayTrainingData& training_data, float eta, float momentum, int display_info_rate)
 		{
 			int display_info_in = display_info_rate - 1;
 
 			float loss = 0.0f;
 
-			for (size_t i = 0; i < training_data.size(); i++)
+			for (size_t i = 0; i < training_data._size; i++)
 			{
-				FeedForward(net, training_data[i]._input);
-				BackpropUseCurrentState(net, training_data[i]._output, eta, momentum);
+				FeedForward(net, training_data._data[i]._input);
+				BackpropUseCurrentState(net, training_data._data[i]._output, eta, momentum);
 
-				loss += CalcLoss(net, training_data[i]._output);
+				loss += CalcLoss(net, training_data._data[i]._output);
 
 				if (display_info_in <= 0 && display_info_rate != 0)
 				{

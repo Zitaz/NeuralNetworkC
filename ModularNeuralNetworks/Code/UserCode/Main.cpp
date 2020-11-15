@@ -1,5 +1,8 @@
 #include "../NeuralNetCode/NeuralNet.h"
-#include "../NeuralNetCode/OpenCLFunctions.h"
+extern "C" {
+	#include "../NeuralNetCode/OpenCLFunctions.h"
+}
+
 #include "SDLFunctions.h"
 
 #include <fstream>
@@ -12,7 +15,7 @@
 //http://yann.lecun.com/exdb/mnist/
 
 void TrainNet();
-Net::Types::TrainingDataVector LoadData(bool);
+Net_ArrayTrainingData LoadData(bool);
 void RenderData();
 Net::NeuralNet* InitNet();
 unsigned ConvertToLittleEndian(unsigned char*);
@@ -23,7 +26,7 @@ void TrainNet()
 
 	Net::NeuralNet* net = InitNet();
 
-	Net::Types::TrainingDataVector training_data = LoadData(false);
+	Net_ArrayTrainingData training_data = LoadData(false);
 
 	Net::NetFunc::LoadNet(*net, "../Serialized/MnistNet");
 	for (size_t i = 0; i < num_passes; i++)
@@ -33,10 +36,12 @@ void TrainNet()
 	}
 	Net::NetFunc::SaveNet(*net, "../Serialized/MnistNet");
 
+	Net_FreeArrayTD(&training_data);
+
 	delete net;
 }
 
-Net::Types::TrainingDataVector LoadData(bool load_test_data = false)
+Net_ArrayTrainingData LoadData(bool load_test_data = false)
 {
 	const int start_index_image = 16;
 	const int start_index_label = 8;
@@ -64,24 +69,24 @@ Net::Types::TrainingDataVector LoadData(bool load_test_data = false)
 	unsigned num_data = ConvertToLittleEndian((unsigned char*)&image_data[4]);
 	unsigned image_size = ConvertToLittleEndian((unsigned char*)&image_data[12]) * ConvertToLittleEndian((unsigned char*)&image_data[8]);
 
-	Net::Types::TrainingDataVector training_data_vector;
-	training_data_vector.reserve(num_data);
+	Net_ArrayTrainingData training_data_vector;
+	Net_CreateArrayTD(&training_data_vector, num_data, 0);
 
 	for (unsigned i = 0; i < num_data; i++)
 	{
-		Net::Types::TrainingData training_data;
+		Net_TrainingData training_data;
+		Net_CreateArrayF(&training_data._output, 10, 10);
+		Net_CreateArrayF(&training_data._input, image_size, 0);
+		Net_ZeroArrayF(&training_data._output);
 
-		training_data._output.resize(10);
-		training_data._output[label_data[i + start_index_label]] = 1.0f;
-
-		training_data._input.reserve(image_size);
+		training_data._output._data[label_data[i + start_index_label]] = 1.0f;
 
 		for (unsigned image_index = 0; image_index < image_size; image_index++)
 		{
-			training_data._input.push_back((unsigned char)(image_data[i * image_size + start_index_image + image_index]) / 255.0f);
+			Net_AddArrayF(&training_data._input, (unsigned char)(image_data[i * image_size + start_index_image + image_index]) / 255.0f);
 		}
 
-		training_data_vector.push_back(training_data);
+		Net_AddArrayTD(&training_data_vector, training_data);
 	}
 
 	return training_data_vector;
@@ -91,7 +96,7 @@ void RenderData()
 {
 	Net::NeuralNet* net = InitNet();
 
-	Net::Types::TrainingDataVector training_data = LoadData(true);
+	Net_ArrayTrainingData training_data = LoadData(true);
 	Net::NetFunc::LoadNet(*net, "../Serialized/MnistNet");
 
 	SDLUtilityClass window;
@@ -111,38 +116,40 @@ void RenderData()
 					data_index--;
 
 					if (data_index < 0)
-						data_index = training_data.size() - 1;
+						data_index = training_data._size - 1;
 				}
 				else
 				{
 					data_index++;
 
-					if (data_index >= training_data.size())
+					if (data_index >= training_data._size)
 						data_index = 0;
 				}
 
 				Sleep(250);
 
-				window.DrawImage(training_data[data_index]._input, 0, 0, 28, 28, false);
+				window.DrawImage(training_data._data[data_index]._input._data, 0, 0, 28, 28, false);
 				window.Render();
 
 				std::cout << "Displaying image: " << data_index << std::endl;
 
-				Net::NetFunc::FeedForward(*net, training_data[data_index]._input);
+				Net::NetFunc::FeedForward(*net, training_data._data[data_index]._input);
 
-				Net::Types::LayerValues values = Net::NetFunc::GetOutputValues(*net);
+				Net_ArrayF values = Net::NetFunc::GetOutputValues(*net);
 
 				std::cout << "Output: " << std::endl;
 
 				int highest_index = 0;
 
-				for (unsigned i = 0; i < values.size(); i++)
+				for (unsigned i = 0; i < values._size; i++)
 				{
-					if (values[highest_index] < values[i])
+					if (values._data[highest_index] < values._data[i])
 						highest_index = i;
 
-					std::cout << values[i] << "  |  ";
+					std::cout << values._data[i] << "  |  ";
 				}
+
+				Net_FreeArrayF(&values);
 
 				std::cout << std::endl << "Best prediction: " << highest_index << std::endl;
 			}
@@ -153,21 +160,23 @@ void RenderData()
 		Sleep(5);
 	}
 
+	Net_FreeArrayTD(&training_data);
+
 	window.DenitializeSDL();
 	delete net;
 }
 
 Net::NeuralNet* InitNet()
 {
-	OpenCL::InitializeData();
+	Net::NeuralNet* net = new Net::NeuralNet;
 
-	Net::NeuralNet* net = new Net::NeuralNet(5);
+	Net::NetFunc::CreateNeuralNet(net, 5);
 
-	Net::InitData::NetConvInitData layer_0_data = { Net::Types::ActivationFunction::LEAKY_RELU, 28, 1, 5, 32, 1 };
-	Net::InitData::NetConvInitData layer_1_data = { Net::Types::ActivationFunction::LEAKY_RELU, 24, 32, 9, 96, 3 };
-	Net::InitData::NetConvInitData layer_2_data = { Net::Types::ActivationFunction::LEAKY_RELU, 6, 96, 5, 96, 1 };
-	Net::InitData::NetFCInitData layer_3_data = { Net::Types::ActivationFunction::LEAKY_RELU, 384, 10 };
-	Net::InitData::NetOutputInitData layer_4_data = { Net::Types::ActivationFunction::LINEAR, 10 };
+	Net::InitData::NetConvInitData layer_0_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 28, 1, 5, 32, 1 };
+	Net::InitData::NetConvInitData layer_1_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 24, 32, 9, 96, 3 };
+	Net::InitData::NetConvInitData layer_2_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 6, 96, 5, 96, 1 };
+	Net::InitData::NetFCInitData layer_3_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 384, 10 };
+	Net::InitData::NetOutputInitData layer_4_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LINEAR, 10 };
 
 	Net::NetFunc::AddConvLayer(*net, layer_0_data, true);
 	Net::NetFunc::AddConvLayer(*net, layer_1_data, true);

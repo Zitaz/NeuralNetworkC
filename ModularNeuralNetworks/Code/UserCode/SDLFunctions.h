@@ -28,7 +28,7 @@ public:
 
 	void DrawPoint(int x, int y);
 
-	void DrawImage(std::vector<float> pixel_data, int position_x, int position_y, int with, int height, bool color);
+	void DrawImage(float* pixel_data, int position_x, int position_y, int with, int height, bool color);
 
 	float GetDeltaTime() { return _delta_time; }
 

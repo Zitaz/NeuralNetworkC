@@ -9,15 +9,15 @@ namespace Net {
 		//	std::shuffle(std::begin(*training_data), std::end(*training_data), random_device);
 		//}
 
-		float GetDerivativ(Types::ActivationFunction function, float value)
+		float GetDerivativ(Net_ActivationFunction function, float value)
 		{
 			switch (function)
 			{
-			case Types::ActivationFunction::LEAKY_RELU:
+			case Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU:
 				return ReluDerivative(value);
-			case Types::ActivationFunction::SIGMOID:
+			case Net_ActivationFunction::NET_ACTIVATION_FUNC_SIGMOID:
 				return SigmoidDerivative(value);
-			case Types::ActivationFunction::LINEAR:
+			case Net_ActivationFunction::NET_ACTIVATION_FUNC_LINEAR:
 				return 1.0f;
 			default:
 				return 0.0f;

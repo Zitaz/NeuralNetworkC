@@ -1,5 +1,4 @@
 #include "NetFCFunc.h"
-#include "../OpenCLFunctions.h"
 #include "../NetBaseFunc.h"
 
 //#include <chrono>
@@ -11,7 +10,7 @@ namespace Net
 {
 	namespace FCFunc
 	{
-		void FeedForward(LayerData& current_layer, LayerData& next_layer)
+		void FeedForward(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data)
 		{
 			if (!current_layer._use_open_CL) 
 			{
@@ -44,9 +43,9 @@ namespace Net
 				//OpenCL error
 				cl_int error = 0;
 
-				//Get opencl kernel and queue 
-				cl_kernel& kernel = OpenCL::Kernels::instace.feedforward_fc_kernel[next_layer._function];
-				cl_command_queue& queue = OpenCL::Data::instace.queue;
+				//Get opencl kernel and _queue 
+				cl_kernel& kernel = cl_data->_kernals._feedforward_fc_kernel[next_layer._function];
+				cl_command_queue& _queue = cl_data->_queue;
 
 				//FeedForward
 				error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);//TODO: Can we preprocess weights so we don't have to take so many cache misses on the gpu?
@@ -58,23 +57,23 @@ namespace Net
 				error = clSetKernelArg(kernel, 3, sizeof(cl_int), &current_layer._fC_layer_data->_num_neurons_with_bias);
 				assert(error == 0);
 
-				error = clFinish(queue);
+				error = clFinish(_queue);
 				assert(error == 0);
 
 				size_t global_range[] = { next_layer._neurons_CL_data->_num_neurons, 0, 0 };
-				error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
+				error = clEnqueueNDRangeKernel(_queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
 				assert(error == 0);
 
-				error = clFinish(queue);//Probably don't need this. Just using it for debugging
+				error = clFinish(_queue);//Probably don't need this. Just using it for debugging
 				assert(error == 0);
 			}
 		}
 
-		void Backprop(LayerData& current_layer, LayerData& next_layer, const float eta, const float momentum)
+		void Backprop(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum)
 		{
 			if (!current_layer._use_open_CL) {
 				//Next_layer function?
-				const Types::ActivationFunction function = current_layer._function;
+				const Net_ActivationFunction function = current_layer._function;
 				const unsigned num_neurons_next = next_layer._neurons_data->_num_neurons;
 				const unsigned num_neurons_with_bias = current_layer._fC_layer_data->_num_neurons_with_bias;
 
@@ -116,9 +115,9 @@ namespace Net
 				//OpenCL error
 				cl_int error = 0;
 
-				//Get opencl kernel and queue 
-				cl_kernel& kernel = OpenCL::Kernels::instace.backprop_fc_kernel[current_layer._function];
-				cl_command_queue& queue = OpenCL::Data::instace.queue;
+				//Get opencl kernel and _queue 
+				cl_kernel& kernel = cl_data->_kernals._backprop_fc_kernel[current_layer._function];
+				cl_command_queue& _queue = cl_data->_queue;
 
 				//FeedForward
 				error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);
@@ -138,14 +137,14 @@ namespace Net
 				error = clSetKernelArg(kernel, 7, sizeof(cl_int), &next_layer._neurons_CL_data->_num_neurons);
 				assert(error == 0);
 
-				error = clFinish(queue);
+				error = clFinish(_queue);
 				assert(error == 0);
 
 				size_t global_range[] = { current_layer._fC_layer_data->_num_neurons_with_bias, 0, 0 };
-				error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
+				error = clEnqueueNDRangeKernel(_queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
 				assert(error == 0);
 
-				error = clFinish(queue);//Probobly dont need this. just using it for debuging
+				error = clFinish(_queue);//Probobly dont need this. just using it for debuging
 				assert(error == 0);
 			}
 		}

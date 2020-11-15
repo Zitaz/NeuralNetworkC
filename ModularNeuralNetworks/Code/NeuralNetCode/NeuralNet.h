@@ -3,6 +3,10 @@
 #include "NetUtility.h"
 #include "NetComponents.h"
 
+extern "C" {
+#include "OpenCLFunctions.h"
+}
+
 #include <vector>
 
 namespace Net
@@ -11,12 +15,12 @@ namespace Net
 	{
 	public:
 
-		NeuralNet(unsigned num_layers);
 		~NeuralNet();
 
 		unsigned _num_layers;
 		unsigned _num_init_layers;
 
+		Net_CLData _cl_data;
 		LayerData* _layers;
 	} NeuralNet;
 
@@ -24,7 +28,7 @@ namespace Net
 	{
 		typedef struct NetConvInitData
 		{
-			Types::ActivationFunction _function;
+			Net_ActivationFunction _function;
 
 			unsigned _length;
 			unsigned _depth;
@@ -33,8 +37,9 @@ namespace Net
 			unsigned _stride;
 		} NetConvInitData;
 
-		typedef struct NetFCInitData {
-			Types::ActivationFunction _function;
+		typedef struct NetFCInitData 
+		{
+			Net_ActivationFunction _function;
 
 			unsigned _num_neurons;
 			unsigned _num_neurons_next;
@@ -42,7 +47,7 @@ namespace Net
 
 		typedef struct NetOutputInitData
 		{
-			Types::ActivationFunction _function;
+			Net_ActivationFunction _function;
 
 			unsigned _num_neurons;
 		} NetOutputInitData;
@@ -50,17 +55,19 @@ namespace Net
 
 	namespace NetFunc
 	{
-		void AddConvLayer(NeuralNet& net, InitData::NetConvInitData& data, bool use_open_cl);
-		void AddFCLayer(NeuralNet& net, InitData::NetFCInitData& data, bool use_open_cl);
-		void AddOutputLayer(NeuralNet& net, InitData::NetOutputInitData& data, bool use_open_cl);
+		void CreateNeuralNet(NeuralNet* net, unsigned num_layers);
 
-		void BackpropUseCurrentState(NeuralNet& net, const Types::LayerValues& target_output, float eta, float momentum);
+		void AddConvLayer(NeuralNet& net, InitData::NetConvInitData& _data, bool use_open_cl);
+		void AddFCLayer(NeuralNet& net, InitData::NetFCInitData& _data, bool use_open_cl);
+		void AddOutputLayer(NeuralNet& net, InitData::NetOutputInitData& _data, bool use_open_cl);
 
-		float CalcLoss(NeuralNet& net, const Types::LayerValues& target_output);
+		void BackpropUseCurrentState(NeuralNet& net, const Net_ArrayF& target_output, float eta, float momentum);
 
-		void FeedForward(NeuralNet& net, Types::LayerValues input);
+		float CalcLoss(NeuralNet& net, const Net_ArrayF& target_output);
 
-		Types::LayerValues GetOutputValues(NeuralNet& net);
+		void FeedForward(NeuralNet& net, Net_ArrayF input);
+
+		Net_ArrayF GetOutputValues(NeuralNet& net);
 
 		//void ValidateNet(NeuralNet& net);
 		
@@ -68,10 +75,10 @@ namespace Net
 		
 		bool LoadNet(NeuralNet& net, const char* path);
 		
-		void SaveTrainingData(std::vector<Types::TrainingData> training_data, const char* path);//TODO: Move to utillity?
+		void SaveTrainingData(Net_ArrayTrainingData training_data, const char* path);//TODO: Move to utillity?
 		
-		Types::TrainingDataVector LoadTrainingData(const char* path);//TODO: Move to utillity?
+		Net_ArrayTrainingData LoadTrainingData(const char* path);//TODO: Move to utillity?
 
-		void TrainNet(NeuralNet& net, const Types::TrainingDataVector& training_data, float eta, float momentum, int display_info_rate);
+		void TrainNet(NeuralNet& net, const Net_ArrayTrainingData& training_data, float eta, float momentum, int display_info_rate);
 	}
 }

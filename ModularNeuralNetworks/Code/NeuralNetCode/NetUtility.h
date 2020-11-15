@@ -1,7 +1,8 @@
 #pragma once
 
+extern "C" {
 #include "NetTypes.h"
-#include "ArrayF.h"
+}
 
 #include <stdio.h>
 #include <cmath>
@@ -16,7 +17,7 @@ namespace Net
 		//TODO: Convert to c
 		//void ShuffleTrainingData(Types::TrainingDataVector* training_data);
 
-		float GetDerivativ(Types::ActivationFunction function, float value);
+		float GetDerivativ(Net_ActivationFunction function, float value);
 
 		//TODO: convert to c
 		//std::vector<float> RescaleImage(std::vector<float> image_data, int width, int height, int new_width, int new_height, bool has_color);
@@ -24,11 +25,11 @@ namespace Net
 		//Inlined functions
 		inline float RandomizeOneToZero() {
 			if (randInit == false) {
-				srand(time(0));
+				srand((unsigned)time(0));
 				randInit = true;
 			}
 
-			return rand() % 2;
+			return (float)rand() / (float)(RAND_MAX / 1.0f);
 		}
 
 		inline float Relu(float value)

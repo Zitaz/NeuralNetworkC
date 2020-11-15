@@ -102,7 +102,7 @@ void SDLUtilityClass::DrawPoint(int x, int y)
 }
 
 //Todo: Super slow, try and find a faster way
-void SDLUtilityClass::DrawImage(std::vector<float> pixel_data, int position_x, int position_y, int width, int height, bool color)
+void SDLUtilityClass::DrawImage(float* pixel_data, int position_x, int position_y, int width, int height, bool color)
 {
 	const unsigned image_size = width * height;
 
