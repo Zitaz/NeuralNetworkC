@@ -1,36 +1,34 @@
 #pragma once
 
 #include "NetTypes.h"
+#include "ArrayF.h"
 
-#include <vector>
-#include <random>
+#include <stdio.h>
 #include <cmath>
+#include <time.h> 
 
 namespace Net 
 {
 	namespace Utility 
 	{
+		static bool randInit = false;
 
-		static std::random_device random_device;
-		static std::mt19937 random_engine(random_device());
-		static std::uniform_real_distribution<float> distribution_one_to_zero(0.0f, 1.0f);
-
-		void ShuffleTrainingData(Types::TrainingDataVector* training_data);
+		//TODO: Convert to c
+		//void ShuffleTrainingData(Types::TrainingDataVector* training_data);
 
 		float GetDerivativ(Types::ActivationFunction function, float value);
 
-		//TODO: do we need vector
-		std::vector<float> RescaleImage(std::vector<float> image_data, int width, int height, int new_width, int new_height, bool has_color);
-
-		template<typename T>
-		static T RandomizeFloat(T min, T max);
-
-		template<typename T>
-		static T RandomizeInt(T min, T max);
+		//TODO: convert to c
+		//std::vector<float> RescaleImage(std::vector<float> image_data, int width, int height, int new_width, int new_height, bool has_color);
 
 		//Inlined functions
 		inline float RandomizeOneToZero() {
-			return  distribution_one_to_zero(random_engine);
+			if (randInit == false) {
+				srand(time(0));
+				randInit = true;
+			}
+
+			return rand() % 2;
 		}
 
 		inline float Relu(float value)

@@ -26,10 +26,10 @@ namespace Net
 			else
 			{
 				assert(layer._neurons_CL_data != nullptr, "Neurons has not been init");
-				assert(values.size() == layer._neurons_CL_data->_num_neurons);;
+				assert(values.size() == layer._neurons_CL_data->_num_neurons);
 
-				OpenCL::Data::instace.queue->enqueueWriteBuffer(layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, &values[0]);
-				OpenCL::Data::instace.queue->finish();
+				clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, &values[0], NULL, NULL, NULL);
+				clFinish(OpenCL::Data::instace.queue);
 			}
 		}
 
@@ -51,9 +51,9 @@ namespace Net
 
 				Types::LayerValues values(layer._neurons_CL_data->_num_neurons);
 
-				OpenCL::Data::instace.queue->finish();//Make sure nothing is writing to buffer
-				OpenCL::Data::instace.queue->enqueueReadBuffer(layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, values.data());
-				OpenCL::Data::instace.queue->finish();
+				clFinish(OpenCL::Data::instace.queue);//Make sure nothing is writing to buffer
+				clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._neurons_CL_data->_buffer_values, CL_FALSE, 0, sizeof(float) * layer._neurons_CL_data->_num_neurons, values.data(), NULL, NULL, NULL);
+				clFinish(OpenCL::Data::instace.queue);
 
 				return values;
 			}

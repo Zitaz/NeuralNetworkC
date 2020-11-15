@@ -74,15 +74,15 @@ namespace Net
 
 				float* values = new float[num_neurons] { 0 };//TODO: Maybe there is a better way to initialize values to zero in the buffers?
 				float* delta_weights = new float[num_weights] { 0 };
-
+				
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons, values, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_weights = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
+				layer._weights_CL_data->_buffer_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_delta_weights = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
+				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
 				assert(error == 0);
 
 				delete[] weights;
@@ -149,13 +149,13 @@ namespace Net
 				values[num_neurons_with_bias - 1] = 1.0f;//Set bias
 
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_neurons_with_bias, values, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_weights = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
+				layer._weights_CL_data->_buffer_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, weights, &error);
 				assert(error == 0);
-				layer._weights_CL_data->_buffer_delta_weights = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
+				layer._weights_CL_data->_buffer_delta_weights = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * num_weights, delta_weights, &error);
 				assert(error == 0);
 
 				delete[] weights;
@@ -203,11 +203,11 @@ namespace Net
 				float* values = new float[data._num_neurons]{ 0 };//TODO: Maybe there is a beter way to initilize valus to zero in the buffers?
 
 				cl_int error = 0;
-				layer._neurons_CL_data->_buffer_values = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_values = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
 				assert(error == 0);
-				layer._neurons_CL_data->_buffer_gradient = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._neurons_CL_data->_buffer_gradient = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
 				assert(error == 0);
-				layer._output_layer_CL_data->_target_value = cl::Buffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
+				layer._output_layer_CL_data->_target_value = clCreateBuffer(OpenCL::Data::instace.context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(float) * data._num_neurons, values, &error);
 				assert(error == 0);
 
 				delete[] values;
@@ -353,18 +353,22 @@ namespace Net
 				if (layer._use_open_CL)
 				{
 					num_weights = layer._weights_CL_data->_num_weights;
-					
+
 					cl_int error = 0;
 		
 					float* layer_weights = new float[num_weights];
 					float* layer_delta_weights = new float[num_weights];
 		
-					OpenCL::Data::instace.queue->finish();
-					error = OpenCL::Data::instace.queue->enqueueReadBuffer(layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_weights);
+					error = clFinish(OpenCL::Data::instace.queue);
 					assert(error == 0);
-					error = OpenCL::Data::instace.queue->enqueueReadBuffer(layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_delta_weights);
+
+					error = clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_weights, NULL, NULL, NULL);
 					assert(error == 0);
-					OpenCL::Data::instace.queue->finish();
+					error = clEnqueueReadBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, sizeof(float) * num_weights, layer_delta_weights, NULL, NULL, NULL);
+					assert(error == 0);
+
+					error = clFinish(OpenCL::Data::instace.queue);
+					assert(error == 0);
 
 					weights = builder.CreateVector<float>(layer_weights, num_weights);
 					delta_weights = builder.CreateVector<float>(layer_delta_weights, num_weights);
@@ -418,15 +422,17 @@ namespace Net
 					const int size = sizeof(float) * layer._weights_CL_data->_num_weights;
 					
 					cl_int error = 0;
-		
-					cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
-		
-					error = queue.finish();
-					error = queue.enqueueWriteBuffer(layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, size, data_layer->_weight()->Data());
+
+					error = clFinish(OpenCL::Data::instace.queue);
 					assert(error == 0);
-					error = queue.enqueueWriteBuffer(layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, size, data_layer->_delta_weight()->Data());
+
+					error = clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_weights, CL_FALSE, 0, size, data_layer->_weight()->Data(), NULL, NULL, NULL);
 					assert(error == 0);
-					error = queue.finish();
+					error = clEnqueueWriteBuffer(OpenCL::Data::instace.queue, layer._weights_CL_data->_buffer_delta_weights, CL_FALSE, 0, size, data_layer->_delta_weight()->Data(), NULL, NULL, NULL);
+					assert(error == 0);
+
+					error = clFinish(OpenCL::Data::instace.queue);
+					assert(error == 0);
 				}
 				else
 				{

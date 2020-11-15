@@ -7,7 +7,7 @@
 
 namespace Net
 {
-	class NeuralNet
+	typedef struct NeuralNet
 	{
 	public:
 
@@ -18,11 +18,11 @@ namespace Net
 		unsigned _num_init_layers;
 
 		LayerData* _layers;
-	};
+	} NeuralNet;
 
 	namespace InitData 
 	{
-		struct NetConvInitData
+		typedef struct NetConvInitData
 		{
 			Types::ActivationFunction _function;
 
@@ -31,21 +31,21 @@ namespace Net
 			unsigned _filter_length;
 			unsigned _num_filters;
 			unsigned _stride;
-		};
+		} NetConvInitData;
 
-		struct NetFCInitData {
+		typedef struct NetFCInitData {
 			Types::ActivationFunction _function;
 
 			unsigned _num_neurons;
 			unsigned _num_neurons_next;
-		};
+		} NetFCInitData;
 
-		struct NetOutputInitData 
+		typedef struct NetOutputInitData
 		{
 			Types::ActivationFunction _function;
 
 			unsigned _num_neurons;
-		};
+		} NetOutputInitData;
 	}
 
 	namespace NetFunc

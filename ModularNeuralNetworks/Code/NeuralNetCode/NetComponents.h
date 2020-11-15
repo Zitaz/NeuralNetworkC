@@ -5,10 +5,11 @@
 #include "NetTypes.h"
 
 #include <CL/cl.hpp>
+#include <CL/cl.h>
 
 namespace Net 
 {
-	struct NeuronsData
+	typedef struct NeuronsData
 	{
 		float* _values = nullptr;
 		float* _gradient = nullptr;
@@ -22,18 +23,18 @@ namespace Net
 			if (_gradient)
 				delete[] _gradient;
 		}
-	};
+	} NeuronsData;
 
-	struct NeuronsCLData
+	typedef struct NeuronsCLData
 	{
-		cl::Buffer _buffer_values;//Should be deleted in parent class destructor
-		cl::Buffer _buffer_gradient;
+		cl_mem _buffer_values;
+		cl_mem _buffer_gradient;
 
 		unsigned _num_neurons;
 		unsigned _num_neurons_next;
-	};
+	} NeuronsCLData;
 
-	struct WeightsData
+	typedef struct WeightsData
 	{
 		float* _weights;
 		float* _delta_weights;
@@ -46,36 +47,36 @@ namespace Net
 			if (_delta_weights)
 				delete[] _delta_weights;
 		}
-	};
+	} WeightsData;
 
-	struct WeightsCLData
+	typedef struct WeightsCLData
 	{
-		cl::Buffer _buffer_weights;
-		cl::Buffer _buffer_delta_weights;
+		cl_mem _buffer_weights;//TODO: delete clReleaseMemObject
+		cl_mem _buffer_delta_weights;
 
 		unsigned _num_weights;
-	};
+	} WeightsCLData;
 
-	struct FCLayerData
+	typedef struct FCLayerData
 	{
 		unsigned _num_neurons_with_bias;
-	};
+	} FCLayerData;
 
-	struct ConvLayerData
+	typedef struct ConvLayerData
 	{
 		unsigned _depth;
 		unsigned _length;
 		unsigned _filter_length;
 		unsigned _num_filters;
 		unsigned _stride;
-	};
+	} ConvLayerData;
 
-	struct OutputLayerCLData
+	typedef struct OutputLayerCLData
 	{
-		cl::Buffer _target_value;
-	};
+		cl_mem _target_value;
+	} OutputLayerCLData;
 
-	struct LayerData
+	typedef struct LayerData
 	{
 		Types::NetType _type;
 		Types::ActivationFunction _function;
@@ -107,5 +108,5 @@ namespace Net
 			if (_output_layer_CL_data)
 				delete _output_layer_CL_data;
 		}
-	};
+	} LayerData;
 }

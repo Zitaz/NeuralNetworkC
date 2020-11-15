@@ -45,18 +45,27 @@ namespace Net
 				cl_int error = 0;
 
 				//Get opencl kernel and queue 
-				cl::Kernel& kernel = OpenCL::Kernels::instace.feedforward_fc_kernel[next_layer._function];
-				cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
+				cl_kernel& kernel = OpenCL::Kernels::instace.feedforward_fc_kernel[next_layer._function];
+				cl_command_queue& queue = OpenCL::Data::instace.queue;
 
 				//FeedForward
-				error = kernel.setArg(0, current_layer._weights_CL_data->_buffer_weights);//TODO: Can we preprocess weights so we don't have to take so many cache misses on the gpu?
-				error = kernel.setArg(1, current_layer._neurons_CL_data->_buffer_values);
-				error = kernel.setArg(2, next_layer._neurons_CL_data->_buffer_values);
-				error = kernel.setArg(3, (cl_int)current_layer._fC_layer_data->_num_neurons_with_bias);
+				error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);//TODO: Can we preprocess weights so we don't have to take so many cache misses on the gpu?
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 1, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_values);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &next_layer._neurons_CL_data->_buffer_values);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 3, sizeof(cl_int), &current_layer._fC_layer_data->_num_neurons_with_bias);
+				assert(error == 0);
 
-				error = queue.finish();
-				error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(next_layer._neurons_CL_data->_num_neurons));
-				error = queue.finish();//Probably don't need this. Just using it for debugging
+				error = clFinish(queue);
+				assert(error == 0);
+
+				size_t global_range[] = { next_layer._neurons_CL_data->_num_neurons, 0, 0 };
+				error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
+				assert(error == 0);
+
+				error = clFinish(queue);//Probably don't need this. Just using it for debugging
 				assert(error == 0);
 			}
 		}
@@ -108,22 +117,35 @@ namespace Net
 				cl_int error = 0;
 
 				//Get opencl kernel and queue 
-				cl::Kernel& kernel = OpenCL::Kernels::instace.backprop_fc_kernel[current_layer._function];
-				cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
+				cl_kernel& kernel = OpenCL::Kernels::instace.backprop_fc_kernel[current_layer._function];
+				cl_command_queue& queue = OpenCL::Data::instace.queue;
 
 				//FeedForward
-				error = kernel.setArg(0, current_layer._weights_CL_data->_buffer_weights);
-				error = kernel.setArg(1, current_layer._weights_CL_data->_buffer_delta_weights);
-				error = kernel.setArg(2, current_layer._neurons_CL_data->_buffer_gradient);
-				error = kernel.setArg(3, next_layer._neurons_CL_data->_buffer_gradient);
-				error = kernel.setArg(4, current_layer._neurons_CL_data->_buffer_values);
-				error = kernel.setArg(5, (cl_float)eta);
-				error = kernel.setArg(6, (cl_float)momentum);
-				error = kernel.setArg(7, (cl_int)next_layer._neurons_CL_data->_num_neurons);
+				error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 1, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_delta_weights);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_gradient);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &next_layer._neurons_CL_data->_buffer_gradient);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 4, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_values);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 5, sizeof(cl_float), &eta);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 6, sizeof(cl_float), &momentum);
+				assert(error == 0);
+				error = clSetKernelArg(kernel, 7, sizeof(cl_int), &next_layer._neurons_CL_data->_num_neurons);
+				assert(error == 0);
 
-				error = queue.finish();
-				error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(current_layer._fC_layer_data->_num_neurons_with_bias));
-				error = queue.finish();//Probobly dont need this. just using it for debuging
+				error = clFinish(queue);
+				assert(error == 0);
+
+				size_t global_range[] = { current_layer._fC_layer_data->_num_neurons_with_bias, 0, 0 };
+				error = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global_range, NULL, 0, NULL, NULL);
+				assert(error == 0);
+
+				error = clFinish(queue);//Probobly dont need this. just using it for debuging
 				assert(error == 0);
 			}
 		}

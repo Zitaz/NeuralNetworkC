@@ -28,7 +28,7 @@ void TrainNet()
 	Net::NetFunc::LoadNet(*net, "../Serialized/MnistNet");
 	for (size_t i = 0; i < num_passes; i++)
 	{
-		Net::Utility::ShuffleTrainingData(&training_data);
+		//Net::Utility::ShuffleTrainingData(&training_data);
 		Net::NetFunc::TrainNet(*net, training_data, 0.01f, 0.5f, 1000);
 	}
 	Net::NetFunc::SaveNet(*net, "../Serialized/MnistNet");
@@ -160,7 +160,6 @@ void RenderData()
 Net::NeuralNet* InitNet()
 {
 	OpenCL::InitializeData();
-	OpenCL::InitializeKernels();
 
 	Net::NeuralNet* net = new Net::NeuralNet(5);
 

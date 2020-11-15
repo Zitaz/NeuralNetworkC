@@ -8,27 +8,27 @@ namespace Net
 	{
 		typedef std::vector<float> LayerValues;
 
-		struct TrainingData
+		typedef struct TrainingData
 		{
 			LayerValues _input;
 			LayerValues _output;
-		};
+		} TrainingData;
 
 		typedef std::vector<TrainingData> TrainingDataVector;
 
-		enum ActivationFunction
+		typedef enum
 		{
 			LINEAR,
 			SIGMOID,
 			LEAKY_RELU,
 			NUM_FUNCTIONS
-		};
+		} ActivationFunction;
 
-		enum NetType
+		typedef enum
 		{
 			OUTPUT,
 			FULLY_CONNECTED,
 			CONVOLUTIONAL,
-		};
+		} NetType;
 	}
 }

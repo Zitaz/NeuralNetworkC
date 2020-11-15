@@ -263,27 +263,27 @@ namespace Net
 			//auto start = std::chrono::high_resolution_clock::now();
 
 			//Get opencl kernel and queue 
-			cl::Kernel& kernel = OpenCL::Kernels::instace.feedforward_conv_kernel[next_layer._function];
-			cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
+			cl_kernel& kernel = OpenCL::Kernels::instace.feedforward_conv_kernel[next_layer._function];
+			cl_command_queue& queue = OpenCL::Data::instace.queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			//std::cout << "Get kernal time: " << duration.count() << std::endl;
 			//
 			//start = std::chrono::high_resolution_clock::now();
-
+			
 			//FeedForward
-			error = kernel.setArg(0, current_layer._weights_CL_data->_buffer_weights);
+			error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);
 			assert(error == 0);
-			error = kernel.setArg(1, current_layer._neurons_CL_data->_buffer_values);
+			error = clSetKernelArg(kernel, 1, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_values);
 			assert(error == 0);
-			error = kernel.setArg(2, next_layer._neurons_CL_data->_buffer_values);
+			error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &next_layer._neurons_CL_data->_buffer_values);
 			assert(error == 0);
-			error = kernel.setArg(3, (cl_int)current_layer._conv_layer_data->_stride);
+			error = clSetKernelArg(kernel, 3, sizeof(cl_int), &current_layer._conv_layer_data->_stride);
 			assert(error == 0);
-			error = kernel.setArg(4, (cl_int)current_layer._conv_layer_data->_filter_length);
+			error = clSetKernelArg(kernel, 4, sizeof(cl_int), &current_layer._conv_layer_data->_filter_length);
 			assert(error == 0);
-			error = kernel.setArg(5, (cl_int)current_layer._conv_layer_data->_depth);
+			error = clSetKernelArg(kernel, 5, sizeof(cl_int), &current_layer._conv_layer_data->_depth);
 			assert(error == 0);
 			//error = queue.finish();
 			//
@@ -292,11 +292,14 @@ namespace Net
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = queue.finish();
+			error = clFinish(queue);
 			assert(error == 0);
-			error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(next_length, next_length, current_layer._conv_layer_data->_num_filters));
+
+			size_t global_range[] = { next_length, next_length, current_layer._conv_layer_data->_num_filters };
+			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
 			assert(error == 0);
-			error = queue.finish();
+
+			error = clFinish(OpenCL::Data::instace.queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();
@@ -315,25 +318,34 @@ namespace Net
 			//auto start = std::chrono::high_resolution_clock::now();
 
 			//Get opencl kernel and queue 
-			cl::Kernel& kernel = OpenCL::Kernels::instace.update_weights_conv_kernel;
-			cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
+			cl_kernel& kernel = OpenCL::Kernels::instace.update_weights_conv_kernel;
+			cl_command_queue& queue = OpenCL::Data::instace.queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			//std::cout << "Get kernal time: " << duration.count() << std::endl;
 			//
 			//start = std::chrono::high_resolution_clock::now();
-
+			
 			//FeedForward
-			error = kernel.setArg(0, current_layer._weights_CL_data->_buffer_weights);
-			error = kernel.setArg(1, current_layer._weights_CL_data->_buffer_delta_weights);
-			error = kernel.setArg(2, current_layer._neurons_CL_data->_buffer_values);
-			error = kernel.setArg(3, next_layer._neurons_CL_data->_buffer_gradient);
-			error = kernel.setArg(4, (cl_int)current_layer._conv_layer_data->_stride);
-			error = kernel.setArg(5, (cl_int)current_layer._conv_layer_data->_length);
-			error = kernel.setArg(6, (cl_int)current_layer._conv_layer_data->_filter_length);
-			error = kernel.setArg(7, (cl_float)eta);
-			error = kernel.setArg(8, (cl_float)momentum);
+			error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 1, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_delta_weights);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_values);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &next_layer._neurons_CL_data->_buffer_gradient);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 4, sizeof(cl_int), &current_layer._conv_layer_data->_stride);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 5, sizeof(cl_int), &current_layer._conv_layer_data->_length);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 6, sizeof(cl_int), &current_layer._conv_layer_data->_filter_length);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 7, sizeof(cl_float), &eta);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 8, sizeof(cl_float), &momentum);
+			assert(error == 0);
 			//error = queue.finish();
 			//
 			//stop = std::chrono::high_resolution_clock::now();
@@ -341,9 +353,14 @@ namespace Net
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = queue.finish();
-			error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(current_layer._conv_layer_data->_filter_length * current_layer._conv_layer_data->_filter_length, current_layer._conv_layer_data->_depth, current_layer._conv_layer_data->_num_filters));
-			error = queue.finish();
+			error = clFinish(queue);
+			assert(error == 0);
+
+			size_t global_range[] = { current_layer._conv_layer_data->_filter_length * current_layer._conv_layer_data->_filter_length, current_layer._conv_layer_data->_depth, current_layer._conv_layer_data->_num_filters };
+			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
+			assert(error == 0);
+
+			error = clFinish(queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();
@@ -360,8 +377,8 @@ namespace Net
 			//auto start = std::chrono::high_resolution_clock::now();
 
 			//Get opencl kernel and queue 
-			cl::Kernel& kernel = OpenCL::Kernels::instace.calc_gradient_conv_kernel[current_layer._function];
-			cl::CommandQueue& queue = *OpenCL::Data::instace.queue;
+			cl_kernel& kernel = OpenCL::Kernels::instace.calc_gradient_conv_kernel[current_layer._function];
+			cl_command_queue& queue = OpenCL::Data::instace.queue;
 
 			//auto stop = std::chrono::high_resolution_clock::now();
 			//auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -370,13 +387,20 @@ namespace Net
 			//start = std::chrono::high_resolution_clock::now();
 
 			//FeedForward
-			error = kernel.setArg(0, current_layer._weights_CL_data->_buffer_weights);
-			error = kernel.setArg(1, current_layer._neurons_CL_data->_buffer_values);
-			error = kernel.setArg(2, current_layer._neurons_CL_data->_buffer_gradient);
-			error = kernel.setArg(3, next_layer._neurons_CL_data->_buffer_gradient);
-			error = kernel.setArg(4, (cl_int)current_layer._conv_layer_data->_stride);
-			error = kernel.setArg(5, (cl_int)current_layer._conv_layer_data->_filter_length);
-			error = kernel.setArg(6, (cl_int)current_layer._conv_layer_data->_num_filters);
+			error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &current_layer._weights_CL_data->_buffer_weights);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 1, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_values);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 2, sizeof(cl_mem), &current_layer._neurons_CL_data->_buffer_gradient);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 3, sizeof(cl_mem), &next_layer._neurons_CL_data->_buffer_gradient);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 4, sizeof(cl_int), &current_layer._conv_layer_data->_stride);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 5, sizeof(cl_int), &current_layer._conv_layer_data->_filter_length);
+			assert(error == 0);
+			error = clSetKernelArg(kernel, 6, sizeof(cl_int), &current_layer._conv_layer_data->_num_filters);
+			assert(error == 0);
 			//error = queue.finish();
 			//
 			//stop = std::chrono::high_resolution_clock::now();
@@ -384,9 +408,14 @@ namespace Net
 			//std::cout << "Set arrg time: " << duration.count() << std::endl;
 			//start = std::chrono::high_resolution_clock::now();
 
-			error = queue.finish();
-			error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_depth));
-			error = queue.finish();
+			error = clFinish(queue);
+			assert(error == 0);
+
+			size_t global_range[] = { current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_length, current_layer._conv_layer_data->_depth };
+			error = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_range, NULL, 0, NULL, NULL);
+			assert(error == 0);
+
+			error = clFinish(queue);
 			assert(error == 0);
 
 			//stop = std::chrono::high_resolution_clock::now();

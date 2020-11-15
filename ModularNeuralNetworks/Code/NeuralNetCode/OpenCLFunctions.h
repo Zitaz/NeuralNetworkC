@@ -4,33 +4,34 @@
 
 #include "NetTypes.h"
 
+#include <CL/cl.h>
 #include <CL/cl.hpp>
 
 namespace OpenCL
 {
-	struct Data
+	typedef struct Data
 	{
-		cl::Platform platform;
-		cl::Device device;
-		cl::Context context;
-		cl::Program program;
-		cl::CommandQueue* queue;
+		cl_platform_id platform;
+		cl_device_id device;
+		cl_context context;
+		cl_program program;
+		cl_command_queue queue;
 
 		static Data instace;
-	};
+	} Data;
 
 	//Index = activation function
-	struct Kernels 
+	typedef struct Kernels 
 	{
-		cl::Kernel feedforward_fc_kernel[Net::Types::NUM_FUNCTIONS];
-		cl::Kernel backprop_fc_kernel[Net::Types::NUM_FUNCTIONS];
-		cl::Kernel feedforward_conv_kernel[Net::Types::NUM_FUNCTIONS];
-		cl::Kernel calc_gradient_conv_kernel[Net::Types::NUM_FUNCTIONS];
-		cl::Kernel update_weights_conv_kernel;
-		cl::Kernel backprop_output_kernel[Net::Types::NUM_FUNCTIONS];
+		cl_kernel feedforward_fc_kernel[Net::Types::NUM_FUNCTIONS];
+		cl_kernel backprop_fc_kernel[Net::Types::NUM_FUNCTIONS];
+		cl_kernel feedforward_conv_kernel[Net::Types::NUM_FUNCTIONS];
+		cl_kernel calc_gradient_conv_kernel[Net::Types::NUM_FUNCTIONS];
+		cl_kernel update_weights_conv_kernel;
+		cl_kernel backprop_output_kernel[Net::Types::NUM_FUNCTIONS];
 
 		static Kernels instace;
-	};
+	} Kernels;
 
 	void InitializeData();
 
@@ -41,5 +42,5 @@ namespace OpenCL
 	//Pointless only one row
 	cl::Kernel CreateKernel(const char* function_name, cl::Program program, cl_int& err);
 
-	cl::Program CreateProgram(const char* file_path);
+	void CreateProgram(const char* file_path);
 }
