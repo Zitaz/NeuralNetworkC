@@ -2,17 +2,8 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 
-#include "../NeuralNet.h"
-#include "CL/cl.hpp"
 #include "../NetComponents.h"
+#include "../OpenCLFunctions.h"
 
-#include <vector>
-
-namespace Net
-{
-	namespace FCFunc
-	{
-		void FeedForward(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data);
-		void Backprop(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum);
-	}
-}
+void Net_FCFeedForward(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data);
+void Net_FCBackprop(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data, const float eta, const float momentum);

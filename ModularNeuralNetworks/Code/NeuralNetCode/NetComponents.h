@@ -2,112 +2,76 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 
-extern "C" {
 #include "NetTypes.h"
-}
 
+#include <stdbool.h>
 #include <CL/cl.h>
 
-namespace Net 
+typedef struct Net_CompNeurons
 {
-	typedef struct NeuronsData
-	{
-		float* _values = nullptr;
-		float* _gradient = nullptr;
+	float* _values;
+	float* _gradient;
 
-		unsigned _num_neurons;
-		unsigned _num_neurons_next;
+	unsigned _num_neurons;
+	unsigned _num_neurons_next;
+} Net_CompNeurons;
 
-		~NeuronsData() {
-			if (_values)
-				delete[] _values;
-			if (_gradient)
-				delete[] _gradient;
-		}
-	} NeuronsData;
+typedef struct Net_CompNeuronsCL
+{
+	cl_mem _buffer_values;
+	cl_mem _buffer_gradient;
 
-	typedef struct NeuronsCLData
-	{
-		cl_mem _buffer_values;
-		cl_mem _buffer_gradient;
+	unsigned _num_neurons;
+	unsigned _num_neurons_next;
+} Net_CompNeuronsCL;
 
-		unsigned _num_neurons;
-		unsigned _num_neurons_next;
-	} NeuronsCLData;
+typedef struct Net_CompWeights
+{
+	float* _weights;
+	float* _delta_weights;
 
-	typedef struct WeightsData
-	{
-		float* _weights;
-		float* _delta_weights;
+	unsigned _num_weights;
+} Net_CompWeights;
 
-		unsigned _num_weights;
+typedef struct Net_CompWeightsCL
+{
+	cl_mem _buffer_weights;
+	cl_mem _buffer_delta_weights;
 
-		~WeightsData() {
-			if (_weights)
-				delete[] _weights;
-			if (_delta_weights)
-				delete[] _delta_weights;
-		}
-	} WeightsData;
+	unsigned _num_weights;
+} Net_CompWeightsCL;
 
-	typedef struct WeightsCLData
-	{
-		cl_mem _buffer_weights;//TODO: delete clReleaseMemObject
-		cl_mem _buffer_delta_weights;
+typedef struct Net_CompFCLayer
+{
+	unsigned _num_neurons_with_bias;
+} Net_CompFCLayer;
 
-		unsigned _num_weights;
-	} WeightsCLData;
+typedef struct Net_CompConvLayer
+{
+	unsigned _depth;
+	unsigned _length;
+	unsigned _filter_length;
+	unsigned _num_filters;
+	unsigned _stride;
+} Net_CompConvLayer;
 
-	typedef struct FCLayerData
-	{
-		unsigned _num_neurons_with_bias;
-	} FCLayerData;
+typedef struct Net_CompOutLayerCL
+{
+	cl_mem _target_value;
+} Net_CompOutLayerCL;
 
-	typedef struct ConvLayerData
-	{
-		unsigned _depth;
-		unsigned _length;
-		unsigned _filter_length;
-		unsigned _num_filters;
-		unsigned _stride;
-	} ConvLayerData;
+typedef struct Net_LayerData
+{
+	Net_NetType _type;
+	Net_ActivationFunction _function;
 
-	typedef struct OutputLayerCLData
-	{
-		cl_mem _target_value;
-	} OutputLayerCLData;
+	bool _use_open_CL;
 
-	typedef struct LayerData
-	{
-		Net_NetType _type;
-		Net_ActivationFunction _function;
-
-		bool _use_open_CL;
-
-		NeuronsData* _neurons_data = nullptr;
-		NeuronsCLData* _neurons_CL_data = nullptr;
-		WeightsData* _weights_data = nullptr;
-		WeightsCLData* _weights_CL_data = nullptr;
-		FCLayerData* _fC_layer_data = nullptr;
-		ConvLayerData* _conv_layer_data = nullptr;
-		OutputLayerCLData* _output_layer_CL_data = nullptr;
-
-		~LayerData() 
-		{
-			if (_neurons_data) 
-				delete _neurons_data;
-			if (_neurons_CL_data)
-				delete _neurons_CL_data;
-			if (_weights_data)
-				delete _weights_data;
-			if (_weights_CL_data)
-				delete _weights_CL_data;
-			if (_fC_layer_data)
-				delete _fC_layer_data;
-			if (_conv_layer_data)
-				delete _conv_layer_data;
-			if (_output_layer_CL_data)
-				delete _output_layer_CL_data;
-		}
-	} LayerData;
-}
+	Net_CompNeurons* _neurons_data;
+	Net_CompNeuronsCL* _neurons_CL_data;
+	Net_CompWeights* _weights_data;
+	Net_CompWeightsCL* _weights_CL_data;
+	Net_CompFCLayer* _fC_layer_data;
+	Net_CompConvLayer* _conv_layer_data;
+	Net_CompOutLayerCL* _output_layer_CL_data;
+} Net_LayerData;

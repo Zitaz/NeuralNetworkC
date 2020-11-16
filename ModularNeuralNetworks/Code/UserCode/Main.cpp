@@ -1,6 +1,5 @@
-#include "../NeuralNetCode/NeuralNet.h"
 extern "C" {
-	#include "../NeuralNetCode/OpenCLFunctions.h"
+#include "../NeuralNetCode/NeuralNet.h"
 }
 
 #include "SDLFunctions.h"
@@ -17,27 +16,29 @@ extern "C" {
 void TrainNet();
 Net_ArrayTrainingData LoadData(bool);
 void RenderData();
-Net::NeuralNet* InitNet();
+Net_NeuralNet* InitNet();
 unsigned ConvertToLittleEndian(unsigned char*);
 
 void TrainNet()
 {
 	const unsigned num_passes = 1;
 
-	Net::NeuralNet* net = InitNet();
+	Net_NeuralNet* net = InitNet();
 
 	Net_ArrayTrainingData training_data = LoadData(false);
 
-	Net::NetFunc::LoadNet(*net, "../Serialized/MnistNet");
+	Net_LoadNet(net, "../Serialized/MnistNet");
+
 	for (size_t i = 0; i < num_passes; i++)
 	{
-		//Net::Utility::ShuffleTrainingData(&training_data);
-		Net::NetFunc::TrainNet(*net, training_data, 0.01f, 0.5f, 1000);
+		//ShuffleTrainingData(&training_data);
+		Net_TrainNet(net, &training_data, 0.01f, 0.5f, 1000);
 	}
-	Net::NetFunc::SaveNet(*net, "../Serialized/MnistNet");
-
+	Net_SaveNet(net, "../Serialized/MnistNet");
+	
 	Net_FreeArrayTD(&training_data);
 
+	Net_FreeLayersNet(net);
 	delete net;
 }
 
@@ -94,10 +95,10 @@ Net_ArrayTrainingData LoadData(bool load_test_data = false)
 
 void RenderData()
 {
-	Net::NeuralNet* net = InitNet();
+	Net_NeuralNet* net = InitNet();
 
 	Net_ArrayTrainingData training_data = LoadData(true);
-	Net::NetFunc::LoadNet(*net, "../Serialized/MnistNet");
+	Net_LoadNet(net, "../Serialized/MnistNet");
 
 	SDLUtilityClass window;
 	window.InitializeSDL(28, 28, "TM");
@@ -133,9 +134,9 @@ void RenderData()
 
 				std::cout << "Displaying image: " << data_index << std::endl;
 
-				Net::NetFunc::FeedForward(*net, training_data._data[data_index]._input);
+				Net_FeedForward(net, training_data._data[data_index]._input);
 
-				Net_ArrayF values = Net::NetFunc::GetOutputValues(*net);
+				Net_ArrayF values = Net_GetOutputValues(net);
 
 				std::cout << "Output: " << std::endl;
 
@@ -163,26 +164,28 @@ void RenderData()
 	Net_FreeArrayTD(&training_data);
 
 	window.DenitializeSDL();
+
+	Net_FreeLayersNet(net);
 	delete net;
 }
 
-Net::NeuralNet* InitNet()
+Net_NeuralNet* InitNet()
 {
-	Net::NeuralNet* net = new Net::NeuralNet;
+	Net_NeuralNet* net = new Net_NeuralNet;
 
-	Net::NetFunc::CreateNeuralNet(net, 5);
+	Net_CreateNet(net, 5);
 
-	Net::InitData::NetConvInitData layer_0_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 28, 1, 5, 32, 1 };
-	Net::InitData::NetConvInitData layer_1_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 24, 32, 9, 96, 3 };
-	Net::InitData::NetConvInitData layer_2_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 6, 96, 5, 96, 1 };
-	Net::InitData::NetFCInitData layer_3_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 384, 10 };
-	Net::InitData::NetOutputInitData layer_4_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LINEAR, 10 };
+	Net_ConvInitData layer_0_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 28, 1, 5, 32, 1 };
+	Net_ConvInitData layer_1_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 24, 32, 9, 96, 3 };
+	Net_ConvInitData layer_2_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 6, 96, 5, 96, 1 };
+	Net_FCInitData layer_3_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LEAKY_RELU, 384, 10 };
+	Net_OutputInitData layer_4_data = { Net_ActivationFunction::NET_ACTIVATION_FUNC_LINEAR, 10 };
 
-	Net::NetFunc::AddConvLayer(*net, layer_0_data, true);
-	Net::NetFunc::AddConvLayer(*net, layer_1_data, true);
-	Net::NetFunc::AddConvLayer(*net, layer_2_data, true);
-	Net::NetFunc::AddFCLayer(*net, layer_3_data, true);
-	Net::NetFunc::AddOutputLayer(*net, layer_4_data, true);
+	Net_AddConvLayer(net, &layer_0_data, true);
+	Net_AddConvLayer(net, &layer_1_data, true);
+	Net_AddConvLayer(net, &layer_2_data, true);
+	Net_AddFCLayer(net, &layer_3_data, true);
+	Net_AddOutputLayer(net, &layer_4_data, true);
 
 	return net;
 }

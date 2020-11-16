@@ -2,28 +2,15 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 
-#include "../NetBaseFunc.h"
-#include "CL/cl.h"
 #include "../NetComponents.h"
-
-extern "C" {
 #include "../OpenCLFunctions.h"
-}
 
-#include <vector>
+void Net_ConvFeedForward(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data);
+void Net_ConvBackprop(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data, const float eta, const float momentum);
+static void Net_ConvCalcGradient(Net_LayerData* current_layer, Net_LayerData* next_layer);//TODO: Can we add CalcGradient to UpdateWeights on cpu?
+static void Net_ConvUpdateWeights(Net_LayerData* current_layer, Net_LayerData* next_layer, const float eta, const float momentum);
 
-namespace Net 
-{
-	namespace ConvFunc
-	{
-		void FeedForward(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data);
-		void Backprop(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum);
-		void CalcGradient(LayerData& current_layer, LayerData& next_layer);//TODO: Can we add CalcGradient to UpdateWeights on cpu?
-		void UpdateWeights(LayerData& current_layer, LayerData& next_layer, const float eta, const float momentum);
-
-		void FeedForwardCpp(LayerData& current_layer, LayerData& next_layer);
-		void FeedForwardCL(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data);
-		void UpdateWeightsCL(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data, const float eta, const float momentum);
-		void CalcGradientCL(LayerData& current_layer, LayerData& next_layer, Net_CLData* cl_data);
-	}
-}
+static void Net_ConvFeedForwardCpp(Net_LayerData* current_layer, Net_LayerData* next_layer);
+static void Net_ConvFeedForwardCL(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data);
+static void Net_ConvUpdateWeightsCL(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data, const float eta, const float momentum);
+static void Net_ConvCalcGradientCL(Net_LayerData* current_layer, Net_LayerData* next_layer, Net_CLData* cl_data);

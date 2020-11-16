@@ -1,84 +1,63 @@
 #pragma once
 
-#include "NetUtility.h"
 #include "NetComponents.h"
-
-extern "C" {
+#include "NetUtility.h"
 #include "OpenCLFunctions.h"
-}
 
-#include <vector>
-
-namespace Net
+typedef struct Net_NeuralNet
 {
-	typedef struct NeuralNet
-	{
-	public:
+	unsigned _num_layers;
+	unsigned _num_init_layers;
 
-		~NeuralNet();
+	Net_CLData _cl_data;//TODO: Change if it dose not work with more then one neural net
+	Net_LayerData* _layers;
+} Net_NeuralNet;
 
-		unsigned _num_layers;
-		unsigned _num_init_layers;
+typedef struct Net_ConvInitData
+{
+	Net_ActivationFunction _function;
 
-		Net_CLData _cl_data;
-		LayerData* _layers;
-	} NeuralNet;
+	unsigned _length;
+	unsigned _depth;
+	unsigned _filter_length;
+	unsigned _num_filters;
+	unsigned _stride;
+} Net_ConvInitData;
 
-	namespace InitData 
-	{
-		typedef struct NetConvInitData
-		{
-			Net_ActivationFunction _function;
+typedef struct Net_FCInitData 
+{
+	Net_ActivationFunction _function;
 
-			unsigned _length;
-			unsigned _depth;
-			unsigned _filter_length;
-			unsigned _num_filters;
-			unsigned _stride;
-		} NetConvInitData;
+	unsigned _num_neurons;
+	unsigned _num_neurons_next;
+} Net_FCInitData;
 
-		typedef struct NetFCInitData 
-		{
-			Net_ActivationFunction _function;
+typedef struct Net_OutputInitData
+{
+	Net_ActivationFunction _function;
 
-			unsigned _num_neurons;
-			unsigned _num_neurons_next;
-		} NetFCInitData;
+	unsigned _num_neurons;
+} Net_OutputInitData;
 
-		typedef struct NetOutputInitData
-		{
-			Net_ActivationFunction _function;
+void Net_CreateNet(Net_NeuralNet* net, unsigned num_layers);
+void Net_FreeLayersNet(Net_NeuralNet* net);
 
-			unsigned _num_neurons;
-		} NetOutputInitData;
-	}
+void Net_AddConvLayer(Net_NeuralNet* net, Net_ConvInitData* _data, bool use_open_cl);
+void Net_AddFCLayer(Net_NeuralNet* net, Net_FCInitData* _data, bool use_open_cl);
+void Net_AddOutputLayer(Net_NeuralNet* net, Net_OutputInitData* _data, bool use_open_cl);
 
-	namespace NetFunc
-	{
-		void CreateNeuralNet(NeuralNet* net, unsigned num_layers);
+void Net_BackpropUseCurrentState(Net_NeuralNet* net, const Net_ArrayF* target_output, float eta, float momentum);
+void Net_FeedForward(Net_NeuralNet* net, Net_ArrayF input);
+float Net_CalcLoss(Net_NeuralNet* net, const Net_ArrayF* target_output);
 
-		void AddConvLayer(NeuralNet& net, InitData::NetConvInitData& _data, bool use_open_cl);
-		void AddFCLayer(NeuralNet& net, InitData::NetFCInitData& _data, bool use_open_cl);
-		void AddOutputLayer(NeuralNet& net, InitData::NetOutputInitData& _data, bool use_open_cl);
+Net_ArrayF Net_GetOutputValues(Net_NeuralNet* net);
 
-		void BackpropUseCurrentState(NeuralNet& net, const Net_ArrayF& target_output, float eta, float momentum);
+//void ValidateNet(NeuralNet& net);
 
-		float CalcLoss(NeuralNet& net, const Net_ArrayF& target_output);
+bool Net_SaveNet(const Net_NeuralNet* net, const char* path);
+bool Net_LoadNet(Net_NeuralNet* net, const char* path);
 
-		void FeedForward(NeuralNet& net, Net_ArrayF input);
+void Net_SaveTrainingData(Net_ArrayTrainingData* training_data, const char* path);//TODO: Move to utillity?
+Net_ArrayTrainingData Net_LoadTrainingData(const char* path);//TODO: Move to utillity?
 
-		Net_ArrayF GetOutputValues(NeuralNet& net);
-
-		//void ValidateNet(NeuralNet& net);
-		
-		bool SaveNet(const NeuralNet& net, const char* path);
-		
-		bool LoadNet(NeuralNet& net, const char* path);
-		
-		void SaveTrainingData(Net_ArrayTrainingData training_data, const char* path);//TODO: Move to utillity?
-		
-		Net_ArrayTrainingData LoadTrainingData(const char* path);//TODO: Move to utillity?
-
-		void TrainNet(NeuralNet& net, const Net_ArrayTrainingData& training_data, float eta, float momentum, int display_info_rate);
-	}
-}
+void Net_TrainNet(Net_NeuralNet* net, const Net_ArrayTrainingData* training_data, float eta, float momentum, int display_info_rate);

@@ -2,26 +2,17 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 
-#include "NetUtility.h"
 #include "CL/cl.h"
+
+#include "NetUtility.h"
 #include "NetComponents.h"
-
-extern "C" {
 #include "OpenCLFunctions.h"
-}
+#include "NetTypes.h"
 
-#include <vector>
+void Net_BaseSetValuesToZero(Net_LayerData* layer);
 
-namespace Net
-{
-	namespace BaseFunc
-	{
-		void SetValuesToZero(LayerData& layer);
+void Net_BaseSetValues(Net_LayerData* layer, Net_CLData* cl_data, Net_ArrayF values);
 
-		void SetValues(LayerData& layer, Net_CLData* cl_data, Net_ArrayF values);
+Net_ArrayF Net_BaseGetValues(Net_LayerData* layer, Net_CLData* cl_data);
 
-		Net_ArrayF GetValues(LayerData& layer, Net_CLData* cl_data);
-
-		void ActivateLayer(LayerData& layer);
-	}
-}
+void Net_BaseActivateLayer(Net_LayerData* layer);
