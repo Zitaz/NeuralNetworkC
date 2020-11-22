@@ -15,32 +15,38 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Code\NeuralNetCode\NeuralNet.cpp">
-      <Filter>Code\NeuralNetCode</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\OpenCLFunctions.cpp">
-      <Filter>Code\NeuralNetCode</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\NetBaseFunc.cpp">
-      <Filter>Code\NeuralNetCode</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\NetUtility.cpp">
-      <Filter>Code\NeuralNetCode</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetConvFunc.cpp">
-      <Filter>Code\NeuralNetCode\Layers</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetFCFunc.cpp">
-      <Filter>Code\NeuralNetCode\Layers</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetOutputFunc.cpp">
-      <Filter>Code\NeuralNetCode\Layers</Filter>
-    </ClCompile>
     <ClCompile Include="Code\UserCode\SDLFunctions.cpp">
       <Filter>Code\UserCode</Filter>
     </ClCompile>
     <ClCompile Include="Code\UserCode\Main.cpp">
       <Filter>Code\UserCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetArrayFunc.c">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\OpenCLFunctions.c">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetUtility.c">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetBaseFunc.c">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetConvFunc.c">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetFCFunc.c">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetOutputFunc.c">
+      <Filter>Code\NeuralNetCode\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NetTypes.c">
+      <Filter>Code\NeuralNetCode</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\NeuralNetCode\NeuralNet.c">
+      <Filter>Code\NeuralNetCode</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="Code\UserCode\SDLFunctions.h">
       <Filter>Code\UserCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\NeuralNetCode\NetArrayFunc.h">
+      <Filter>Code\NeuralNetCode</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

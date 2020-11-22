@@ -19,13 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetConvFunc.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetFCFunc.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\Layers\NetOutputFunc.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\NetBaseFunc.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\NetUtility.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\NeuralNet.cpp" />
-    <ClCompile Include="Code\NeuralNetCode\OpenCLFunctions.cpp" />
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetConvFunc.c" />
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetFCFunc.c" />
+    <ClCompile Include="Code\NeuralNetCode\Layers\NetOutputFunc.c" />
+    <ClCompile Include="Code\NeuralNetCode\NetArrayFunc.c" />
+    <ClCompile Include="Code\NeuralNetCode\NetBaseFunc.c" />
+    <ClCompile Include="Code\NeuralNetCode\NetTypes.c" />
+    <ClCompile Include="Code\NeuralNetCode\NetUtility.c" />
+    <ClCompile Include="Code\NeuralNetCode\NeuralNet.c" />
+    <ClCompile Include="Code\NeuralNetCode\OpenCLFunctions.c" />
     <ClCompile Include="Code\UserCode\Main.cpp" />
     <ClCompile Include="Code\UserCode\SDLFunctions.cpp" />
   </ItemGroup>
@@ -33,6 +35,7 @@
     <ClInclude Include="Code\NeuralNetCode\Layers\NetConvFunc.h" />
     <ClInclude Include="Code\NeuralNetCode\Layers\NetFCFunc.h" />
     <ClInclude Include="Code\NeuralNetCode\Layers\NetOutputFunc.h" />
+    <ClInclude Include="Code\NeuralNetCode\NetArrayFunc.h" />
     <ClInclude Include="Code\NeuralNetCode\NetBaseFunc.h" />
     <ClInclude Include="Code\NeuralNetCode\NetComponents.h" />
     <ClInclude Include="Code\NeuralNetCode\NetTypes.h" />
